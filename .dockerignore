@@ -1,0 +1,18 @@
+# Dependencies and build outputs
+node_modules
+.next
+.git
+*.md
+.env
+.env.*
+!.env.example
+
+# Backend (not needed in frontend image)
+backend
+
+# IDE and OS
+.venv
+__pycache__
+*.pyc
+.cursor
+.DS_Store

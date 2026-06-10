@@ -37,9 +37,21 @@ export function normalizeGapScore(raw: number): number {
   return Math.round(Math.min(100, Math.max(0, raw)));
 }
 
-function clauseIdFromTitle(title: string): string {
+function policyNameToSectionId(policyName: string): string {
+  return (
+    policyName
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "policy"
+  );
+}
+
+function clauseIdFromTitle(title: string, policyName?: string): string {
+  const prefix = policyName ? `${policyNameToSectionId(policyName)}_` : "";
   return (
     "c_" +
+    prefix +
     title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "_")
@@ -115,6 +127,13 @@ function pendingComparison(
 /**
  * Ensures every clause has a row per insurer (empty AI comparisons → pending placeholders).
  */
+function sectionIdForRawClause(raw: AiClauseComparisonRaw): string {
+  if (raw.policy_name?.trim()) {
+    return policyNameToSectionId(raw.policy_name);
+  }
+  return inferSectionId(raw.rfq_clause);
+}
+
 export function normalizeAiClause(
   raw: AiClauseComparisonRaw,
   insurers: readonly string[] = DEFAULT_QCR_INSURERS
@@ -133,8 +152,8 @@ export function normalizeAiClause(
   );
 
   return {
-    clause_id: clauseIdFromTitle(raw.rfq_clause),
-    section_id: inferSectionId(raw.rfq_clause),
+    clause_id: clauseIdFromTitle(raw.rfq_clause, raw.policy_name),
+    section_id: sectionIdForRawClause(raw),
     rfq_clause: raw.rfq_clause,
     rfq_requirement: raw.rfq_requirement,
     source: raw.source,
@@ -152,6 +171,21 @@ export function normalizeAiClauses(
   return rawClauses.map((c) => normalizeAiClause(c, insurers));
 }
 
+function resolveInsurers(
+  rawClauses: AiClauseComparisonRaw[],
+  override?: readonly string[]
+): string[] {
+  if (override?.length) return [...override];
+  const fromComparisons = new Set<string>();
+  for (const clause of rawClauses) {
+    for (const c of clause.comparisons) {
+      if (c.insurer.trim()) fromComparisons.add(c.insurer);
+    }
+  }
+  if (fromComparisons.size > 0) return [...fromComparisons].sort();
+  return [...DEFAULT_QCR_INSURERS];
+}
+
 export function buildQcrWorkspaceFromAiResponse(
   rawClauses: AiClauseComparisonRaw[],
   options: {
@@ -159,9 +193,13 @@ export function buildQcrWorkspaceFromAiResponse(
     projectName?: string;
     clientName?: string;
     workspaceId?: string;
+    insurers?: readonly string[];
+    sections?: readonly { id: string; label: string }[];
+    rfqFileName?: string;
+    generatedAt?: string;
   }
 ): QcrWorkspace {
-  const insurers = [...DEFAULT_QCR_INSURERS];
+  const insurers = resolveInsurers(rawClauses, options.insurers);
   const clauses = normalizeAiClauses(rawClauses, insurers);
 
   return {
@@ -170,11 +208,12 @@ export function buildQcrWorkspaceFromAiResponse(
       project_id: options.projectId,
       project_name: options.projectName ?? "Property QCR Review",
       client_name: options.clientName,
-      rfq_file_name: "RFQ_Property_Comparison.xlsx",
-      generated_at: new Date().toISOString(),
+      rfq_file_name: options.rfqFileName ?? "RFQ_Property_Comparison.xlsx",
+      generated_at: options.generatedAt ?? new Date().toISOString(),
       schema_version: "2.0",
     },
     insurers,
     clauses,
+    sections: options.sections?.length ? [...options.sections] : undefined,
   };
 }

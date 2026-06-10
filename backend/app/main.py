@@ -16,7 +16,7 @@ from app.config import get_settings
 
 from app.database import Base, engine
 
-from app.routers import auth, clients, demo_requests, projects, workspace
+from app.routers import auth, clients, demo_requests, documents, projects, workspace
 
 
 
@@ -32,6 +32,9 @@ async def lifespan(_app: FastAPI):
 
     from app.models.client import Client  # noqa: F401
     from app.models.project import Project  # noqa: F401
+    from app.models.project_document import ProjectDocument  # noqa: F401
+    from app.models.qcr_generation_run import QcrGenerationRun  # noqa: F401
+    from app.models.qcr_workspace_edit import QcrWorkspaceEdit  # noqa: F401
 
     from app.models.demo_request import DemoRequest  # noqa: F401
 
@@ -117,6 +120,7 @@ app.include_router(clients.router)
 
 app.include_router(demo_requests.router)
 app.include_router(projects.router)
+app.include_router(documents.router)
 app.include_router(workspace.router)
 
 

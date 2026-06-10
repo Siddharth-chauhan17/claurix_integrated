@@ -192,6 +192,158 @@ export async function updateProjectStatus(
   return res.json() as Promise<Project>;
 }
 
+export type ProjectDocumentType = "rfq" | "quote";
+
+export type ProjectDocument = {
+  id: string;
+  project_id: string;
+  document_type: ProjectDocumentType;
+  original_filename: string;
+  uploaded_by: string;
+  created_at: string;
+};
+
+export type ProjectDocumentListResponse = {
+  count: number;
+  items: ProjectDocument[];
+};
+
+export async function listProjectDocuments(
+  projectId: string,
+  documentType?: ProjectDocumentType
+): Promise<ProjectDocumentListResponse> {
+  const params = new URLSearchParams();
+  if (documentType) params.set("document_type", documentType);
+  const q = params.toString() ? `?${params.toString()}` : "";
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/documents${q}`,
+    { credentials: "include", cache: "no-store" }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to load project documents"));
+  }
+  return res.json() as Promise<ProjectDocumentListResponse>;
+}
+
+export async function uploadProjectRfq(
+  projectId: string,
+  file: File
+): Promise<{ document: ProjectDocument }> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/documents/rfq`,
+    { method: "POST", credentials: "include", body: form }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to upload RFQ to server"));
+  }
+  return res.json() as Promise<{ document: ProjectDocument }>;
+}
+
+export type QcrEditingDataSource = "gap_analysis" | "mock";
+
+export type QcrEditingWorkspaceApiResponse = {
+  project_id: string;
+  source: QcrEditingDataSource;
+  workspace_id: string;
+  insurers: string[];
+  sections: { id: string; label: string }[];
+  clauses: Array<{
+    policy_name?: string;
+    rfq_clause: string;
+    rfq_requirement: string;
+    comparisons: Array<{
+      insurer: string;
+      proposal_clause: string;
+      status: string;
+      gap_score: number;
+      differences?: string[];
+      broker_note?: string;
+    }>;
+    source?: {
+      file_name?: string;
+      sheet_name: string;
+      excel_row: number;
+      clause_cell: string;
+      requirement_cell: string;
+      uw_remark_cell: string;
+    };
+  }> | null;
+  rfq_file_name?: string | null;
+  generated_at?: string | null;
+  run_id?: string | null;
+  broker_clauses?: Array<Record<string, unknown>> | null;
+  broker_saved_at?: string | null;
+  broker_saved_by?: string | null;
+};
+
+export type QcrWorkspaceSaveApiRequest = {
+  workspace_id: string;
+  clauses: Array<Record<string, unknown>>;
+  saved_at?: string;
+};
+
+export type QcrWorkspaceSaveApiResponse = {
+  project_id: string;
+  workspace_id: string;
+  saved_at: string;
+  saved_by: string;
+  clause_count: number;
+};
+
+/** GET /projects/{id}/qcr-workspace — raw clauses for QCR editing UI (v2.0). */
+export async function fetchQcrEditingWorkspace(
+  projectId: string
+): Promise<QcrEditingWorkspaceApiResponse> {
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/qcr-workspace`,
+    { credentials: "include", cache: "no-store" }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to load QCR workspace"));
+  }
+  return res.json() as Promise<QcrEditingWorkspaceApiResponse>;
+}
+
+/** POST /projects/{id}/qcr-workspace — persist broker clause edits. */
+export async function saveQcrEditingWorkspace(
+  projectId: string,
+  body: QcrWorkspaceSaveApiRequest
+): Promise<QcrWorkspaceSaveApiResponse> {
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/qcr-workspace`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to save QCR workspace"));
+  }
+  return res.json() as Promise<QcrWorkspaceSaveApiResponse>;
+}
+
+export async function uploadProjectQuotes(
+  projectId: string,
+  files: File[]
+): Promise<{ count: number; items: ProjectDocument[] }> {
+  const form = new FormData();
+  for (const file of files) {
+    form.append("files", file);
+  }
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/documents/quotes`,
+    { method: "POST", credentials: "include", body: form }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to upload quotes to server"));
+  }
+  return res.json() as Promise<{ count: number; items: ProjectDocument[] }>;
+}
+
 export async function createProject(payload: ProjectCreatePayload): Promise<Project> {
   const res = await fetch(`${API_BASE_URL}/projects`, {
     method: "POST",

@@ -8,6 +8,7 @@ export type WorkflowStageMeta = {
 };
 
 export const WORKFLOW_STAGES: WorkflowStageMeta[] = [
+  { id: "document-upload", label: "Upload documents", shortLabel: "Upload", enabled: true },
   { id: "workstation", label: "Workstation", shortLabel: "Workstation", enabled: true },
   { id: "rfq-upload", label: "Uploaded RFQ", shortLabel: "RFQ", enabled: true },
   { id: "quote-uploads", label: "Uploaded Quotes", shortLabel: "Quotes", enabled: true },

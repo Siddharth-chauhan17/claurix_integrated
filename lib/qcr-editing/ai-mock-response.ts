@@ -19,6 +19,8 @@ export type AiClauseComparisonRaw = {
   rfq_requirement: string;
   comparisons: AiInsurerComparisonRaw[];
   source?: ClauseSource;
+  /** Insurance policy line (gap-analysis); drives sidebar sections when present. */
+  policy_name?: string;
 };
 
 const MOCK_SOURCE_SHEET = "RFQ Package Policy";

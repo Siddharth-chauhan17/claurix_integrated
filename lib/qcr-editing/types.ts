@@ -59,6 +59,12 @@ export const QCR_SECTIONS: QcrSection[] = [
   { id: "special_conditions", label: "Special Conditions" },
 ];
 
+/** Policy-based or legacy fixed sections for the editing sidebar. */
+export type WorkspaceSection = {
+  id: string;
+  label: string;
+};
+
 export type InsurerComparison = {
   insurer: string;
   proposal_clause: string;
@@ -79,7 +85,7 @@ export type InsurerComparison = {
  */
 export type ClauseComparison = {
   clause_id: string;
-  section_id: QcrSectionId;
+  section_id: string;
   rfq_clause: string;
   rfq_requirement: string;
   /** Original RFQ Excel cell reference — used by Source verification UI. */
@@ -107,6 +113,8 @@ export type QcrWorkspace = {
   meta: QcrWorkspaceMeta;
   insurers: string[];
   clauses: ClauseComparison[];
+  /** When set (gap-analysis), sidebar uses policy sections instead of QCR_SECTIONS. */
+  sections?: WorkspaceSection[];
 };
 
 /** Partial updates for inline editing (persistence-ready patches). */

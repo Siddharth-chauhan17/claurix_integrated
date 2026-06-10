@@ -3,14 +3,15 @@
  * Reusable by web, mobile, export, and future persistence layer.
  */
 
+import { QCR_SECTIONS } from "./types";
 import type {
   ClauseComparison,
   ClauseComparisonPatch,
   ComparisonStatus,
   InsurerComparison,
   InsurerComparisonPatch,
-  QcrSectionId,
   QcrWorkspace,
+  WorkspaceSection,
 } from "./types";
 
 export type ClauseFilter = {
@@ -85,28 +86,30 @@ export function averageGapScore(
   return n === 0 ? 0 : Math.round((sum / n) * 10) / 10;
 }
 
+export function resolveWorkspaceSections(
+  workspace: QcrWorkspace | null
+): WorkspaceSection[] {
+  if (workspace?.sections?.length) return workspace.sections;
+  return QCR_SECTIONS;
+}
+
 export function filterClausesBySection(
   clauses: ClauseComparison[],
-  sectionId: QcrSectionId | "all"
+  sectionId: string | "all"
 ): ClauseComparison[] {
   if (sectionId === "all") return clauses;
   return clauses.filter((c) => c.section_id === sectionId);
 }
 
 export function countClausesBySection(
-  clauses: ClauseComparison[]
-): Record<QcrSectionId, number> {
-  return {
-    property_damage: clauses.filter((c) => c.section_id === "property_damage")
-      .length,
-    business_interruption: clauses.filter(
-      (c) => c.section_id === "business_interruption"
-    ).length,
-    extensions: clauses.filter((c) => c.section_id === "extensions").length,
-    special_conditions: clauses.filter(
-      (c) => c.section_id === "special_conditions"
-    ).length,
-  };
+  clauses: ClauseComparison[],
+  sections: readonly WorkspaceSection[] = QCR_SECTIONS
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const section of sections) {
+    counts[section.id] = clauses.filter((c) => c.section_id === section.id).length;
+  }
+  return counts;
 }
 
 export function filterClauses(

@@ -36,7 +36,6 @@ import type {
   ComparisonStatus,
   InsurerComparisonPatch,
   OverrideStatus,
-  QcrSectionId,
   QcrWorkspace,
 } from "./types";
 
@@ -50,7 +49,7 @@ export type QcrEditingUiState = {
   loadError: string | null;
   saveError: string | null;
   workspaceView: QcrWorkspaceView;
-  activeSectionId: QcrSectionId;
+  activeSectionId: string;
   activeClauseId: string | null;
   activeInsurer: string | null;
   filter: ClauseFilter;
@@ -79,7 +78,7 @@ type QcrEditingStore = {
 
   loadWorkspace: (projectId: string) => Promise<void>;
   resetWorkspace: () => void;
-  setActiveSection: (sectionId: QcrSectionId) => void;
+  setActiveSection: (sectionId: string) => void;
   setActiveClause: (clauseId: string | null) => void;
   setActiveInsurer: (insurer: string | null) => void;
   setFilter: (patch: Partial<ClauseFilter>) => void;
@@ -153,6 +152,26 @@ function cloneClauses(clauses: ClauseComparison[]): ClauseComparison[] {
   return JSON.parse(JSON.stringify(clauses)) as ClauseComparison[];
 }
 
+const PERSIST_DEBOUNCE_MS = 800;
+
+let persistDebounceId: ReturnType<typeof setTimeout> | null = null;
+let savePending = false;
+
+function schedulePersistWorkspace(immediate = false): void {
+  if (persistDebounceId) {
+    clearTimeout(persistDebounceId);
+    persistDebounceId = null;
+  }
+  if (immediate) {
+    void useQcrEditingStore.getState().saveWorkspace();
+    return;
+  }
+  persistDebounceId = setTimeout(() => {
+    persistDebounceId = null;
+    void useQcrEditingStore.getState().saveWorkspace();
+  }, PERSIST_DEBOUNCE_MS);
+}
+
 function markDirty(
   draft: QcrEditingDraftState,
   clauseId: string,
@@ -196,8 +215,10 @@ export const useQcrEditingStore = create<QcrEditingStore>((set, get) => ({
         clientName: ws.clientName || undefined,
       });
       const clauses = cloneClauses(workspace.clauses);
+      const defaultSectionId =
+        workspace.sections?.[0]?.id ?? clauses[0]?.section_id ?? "property_damage";
       const sectionClauses = clauses.filter(
-        (c) => c.section_id === "property_damage"
+        (c) => c.section_id === defaultSectionId
       );
       const first = sectionClauses[0] ?? clauses[0];
       const visibleInsurers = Object.fromEntries(
@@ -214,7 +235,7 @@ export const useQcrEditingStore = create<QcrEditingStore>((set, get) => ({
         ui: {
           ...defaultUi,
           isLoading: false,
-          activeSectionId: first?.section_id ?? "property_damage",
+          activeSectionId: first?.section_id ?? defaultSectionId,
           activeClauseId: first?.clause_id ?? null,
           activeInsurer: workspace.insurers[0] ?? null,
           visibleInsurers,
@@ -341,6 +362,7 @@ export const useQcrEditingStore = create<QcrEditingStore>((set, get) => ({
       clauses: next,
       draft: markDirty(draft, clauseId, next, baselineClauses),
     });
+    schedulePersistWorkspace();
   },
 
   updateInsurerComparison: (clauseId, insurer, patch) => {
@@ -355,6 +377,7 @@ export const useQcrEditingStore = create<QcrEditingStore>((set, get) => ({
       clauses: next,
       draft: markDirty(draft, clauseId, next, baselineClauses),
     });
+    schedulePersistWorkspace();
   },
 
   setBrokerOverride: (clauseId, insurer, override) => {
@@ -395,6 +418,7 @@ export const useQcrEditingStore = create<QcrEditingStore>((set, get) => ({
         remarkDrafts,
       },
     });
+    schedulePersistWorkspace(true);
   },
 
   upsertRemarkDraft: (entry) =>
@@ -447,21 +471,31 @@ export const useQcrEditingStore = create<QcrEditingStore>((set, get) => ({
     const ids = draft.dirtyClauseIds.filter((id) => id !== clauseId);
     const remarkDrafts = draft.remarkDrafts.filter((d) => d.clause_id !== clauseId);
     set({ clauses: next, draft: { ...draft, dirtyClauseIds: ids, remarkDrafts } });
+    schedulePersistWorkspace(true);
   },
 
   saveWorkspace: async () => {
-    const { workspace, clauses } = get();
+    const { workspace, clauses, ui } = get();
     if (!workspace) return;
+    if (ui.isSaving) {
+      savePending = true;
+      return;
+    }
     set((s) => ({ ui: { ...s.ui, isSaving: true, saveError: null } }));
     try {
       await saveQcrWorkspace({
+        project_id: workspace.meta.project_id,
         workspace_id: workspace.workspace_id,
         clauses,
         saved_at: new Date().toISOString(),
       });
       set((s) => ({
-        baselineClauses: cloneClauses(clauses),
-        draft: defaultDraft,
+        baselineClauses: cloneClauses(get().clauses),
+        draft: {
+          remarkDrafts: s.draft.remarkDrafts,
+          lastEditedAt: s.draft.lastEditedAt,
+          dirtyClauseIds: [],
+        },
         ui: { ...s.ui, isSaving: false },
       }));
     } catch (e) {
@@ -472,6 +506,11 @@ export const useQcrEditingStore = create<QcrEditingStore>((set, get) => ({
           saveError: e instanceof Error ? e.message : "Save failed",
         },
       }));
+    } finally {
+      if (savePending) {
+        savePending = false;
+        void get().saveWorkspace();
+      }
     }
   },
 }));

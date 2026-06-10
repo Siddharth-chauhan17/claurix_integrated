@@ -6,6 +6,8 @@ USER_PREFIX = "usr_"
 ORG_PREFIX = "org_"
 CLIENT_PREFIX = "clt_"
 PROJECT_PREFIX = "prj_"
+DOCUMENT_PREFIX = "doc_"
+QCR_RUN_PREFIX = "qcr_"
 
 # Stable testing org (only exception to random org IDs)
 PERSONAL_ORG_ID = "org_personal"
@@ -30,6 +32,14 @@ def new_client_id() -> str:
 
 def new_project_id() -> str:
     return new_id(PROJECT_PREFIX)
+
+
+def new_document_id() -> str:
+    return new_id(DOCUMENT_PREFIX)
+
+
+def new_qcr_run_id() -> str:
+    return new_id(QCR_RUN_PREFIX)
 
 
 def is_valid_user_id(value: object) -> bool:

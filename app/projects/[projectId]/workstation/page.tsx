@@ -30,7 +30,7 @@ export default function ProjectWorkstationPage() {
       selectedRange: null,
       assignMenu: null,
       hydrated: false,
-      currentStage: "workstation",
+      currentStage: "document-upload",
     });
   };
 

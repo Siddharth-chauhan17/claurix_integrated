@@ -3,6 +3,9 @@ Mock QCR orchestration — same contract shape as future cofounder_ai_service.
 
 Swap this module for real AI without changing routes, schemas, or frontend types.
 Outputs are deterministic from project_id + section mappings for stable dev/testing.
+
+Real pipeline modules live under app.ai (extraction, llm, gap_analysis).
+Enabled when Settings.ai_enabled is True (Phase 2+ wiring).
 """
 
 from __future__ import annotations

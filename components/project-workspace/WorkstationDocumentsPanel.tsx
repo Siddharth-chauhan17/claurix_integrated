@@ -75,9 +75,9 @@ function EmptyDocuments({ icon, message }: { icon: ReactNode; message: string })
     <div className="mt-8 flex flex-col items-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 px-6 py-12 text-center">
       <span className="text-slate-300">{icon}</span>
       <p className="mt-4 text-sm text-slate-500">{message}</p>
-      <p className="mt-3 text-xs text-slate-400">
-        Upload files from the Workstation view.
-      </p>
+        <p className="mt-3 text-xs text-slate-400">
+          Upload files from the Upload documents step.
+        </p>
     </div>
   );
 }

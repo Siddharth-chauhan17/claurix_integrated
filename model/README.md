@@ -1,5 +1,8 @@
 # Insurance Gap Analysis Backend
 
+> **Reference / standalone demo only.** Production AI code lives in **`backend/app/ai/`** — see `backend/app/ai/README.md`.  
+> `model/backend/main.py` is deprecated glue; claurix uses `POST /projects/{id}/documents/*` + in-process `app.ai` (Phase 2+).
+
 ## Overview
 
 This backend processes insurance proposal Excel files and extracts policy clauses, requirements, underwriting remarks, and proposal comparisons.

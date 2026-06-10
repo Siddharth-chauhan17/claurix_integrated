@@ -28,12 +28,18 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:8000/auth/google/callback}
+      AI_ENABLED: ${AI_ENABLED:-false}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      AI_MODEL_NAME: ${AI_MODEL_NAME:-qwen2.5:7b}
     ports:
       - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - claurix_uploads:/app/uploads
     restart: unless-stopped
 
 volumes:
   postgres_data:
+  claurix_uploads:

@@ -48,6 +48,14 @@ class Settings(BaseSettings):
     google_client_secret: Optional[str] = None
     google_redirect_uri: str = "http://localhost:8000/auth/google/callback"
 
+    # Gap analysis / Ollama (Phase 0 — modules present; pipeline off by default)
+    ai_enabled: bool = False
+    ollama_base_url: str = "http://localhost:11434"
+    ai_model_name: str = "qwen2.5:7b"
+
+    # Project document uploads (RFQ / quote files for gap analysis)
+    uploads_dir: str = "uploads"
+
 
 @lru_cache
 def get_settings() -> Settings:

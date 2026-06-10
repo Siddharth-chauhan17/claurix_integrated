@@ -50,6 +50,7 @@ function InsurerComparisonCard({
   highlighted,
   draftValue,
   isDirty,
+  isSaving,
   onDraftChange,
   onSave,
   onDiscard,
@@ -58,6 +59,7 @@ function InsurerComparisonCard({
   highlighted: boolean;
   draftValue: string;
   isDirty: boolean;
+  isSaving: boolean;
   onDraftChange: (value: string) => void;
   onSave: () => void;
   onDiscard: () => void;
@@ -92,9 +94,10 @@ function InsurerComparisonCard({
                 <button
                   type="button"
                   onClick={onSave}
-                  className="rounded-md bg-primary-600 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm transition hover:bg-primary-700"
+                  disabled={isSaving}
+                  className="rounded-md bg-primary-600 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-50"
                 >
-                  Save
+                  {isSaving ? "Saving…" : "Save"}
                 </button>
               </div>
             ) : null}
@@ -154,6 +157,7 @@ export function ReviewPanelV2() {
   const activeClauseId = useQcrEditingStore((s) => s.ui.activeClauseId);
   const activeInsurer = useQcrEditingStore((s) => s.ui.activeInsurer);
   const rightPanelOpen = useQcrEditingStore((s) => s.ui.rightPanelOpen);
+  const isSaving = useQcrEditingStore((s) => s.ui.isSaving);
   const toggleRightPanel = useQcrEditingStore((s) => s.toggleRightPanel);
   const updateClause = useQcrEditingStore((s) => s.updateClause);
   const updateProposalClause = useQcrEditingStore((s) => s.updateProposalClause);
@@ -219,7 +223,7 @@ export function ReviewPanelV2() {
   };
 
   const handleRemarkSave = (insurer: string) => {
-    if (!clause) return;
+    if (!clause || isSaving) return;
 
     const stored = findRemarkDraft(remarkDrafts, clause.clause_id, insurer);
     const pending =
@@ -330,6 +334,7 @@ export function ReviewPanelV2() {
                         highlighted={comparison.insurer === activeInsurer}
                         draftValue={draftValue}
                         isDirty={isDirty}
+                        isSaving={isSaving}
                         onDraftChange={(value) =>
                           handleRemarkDraft(
                             comparison.insurer,

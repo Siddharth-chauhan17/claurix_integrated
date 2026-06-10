@@ -1,6 +1,7 @@
 /** Isolated project workspace types — frontend-only until AI phase. */
 
 export type WorkflowStageId =
+  | "document-upload"
   | "workstation"
   | "rfq-upload"
   | "quote-uploads"
@@ -22,12 +23,16 @@ export type RfqWorkbook = {
   fileName: string;
   sheets: ParsedSheet[];
   uploadedAt: string;
+  /** Server-side document id after Phase 1 dual-write upload. */
+  serverDocumentId?: string;
 };
 
 export type QuoteFileRef = {
   id: string;
   name: string;
   uploadedAt: string;
+  /** Server-side document id after Phase 1 dual-write upload. */
+  serverDocumentId?: string;
 };
 
 export type PolicyMapping = {

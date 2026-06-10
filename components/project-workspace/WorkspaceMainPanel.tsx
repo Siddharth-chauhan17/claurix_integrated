@@ -46,6 +46,10 @@ export function WorkspaceMainPanel() {
     );
   }
 
+  if (currentStage === "document-upload") {
+    return <WorkstationUploadHub />;
+  }
+
   if (currentStage === "rfq-upload") {
     return <WorkstationDocumentsPanel variant="rfq" />;
   }
@@ -54,15 +58,15 @@ export function WorkspaceMainPanel() {
     return <WorkstationDocumentsPanel variant="quotes" />;
   }
 
-  const onWorkstation =
-    currentStage === "workstation" || currentStage === "policy-mapping";
-  const showGrid = onWorkstation && Boolean(rfqWorkbook);
+  const onPolicyMapping =
+    currentStage === "policy-mapping" || currentStage === "workstation";
+  const showGrid = onPolicyMapping && Boolean(rfqWorkbook);
 
   if (!showGrid) {
     return <WorkstationUploadHub />;
   }
 
-  if (onWorkstation && qcrBusy) {
+  if (onPolicyMapping && qcrBusy) {
     return <QcrGenerationPanel />;
   }
 

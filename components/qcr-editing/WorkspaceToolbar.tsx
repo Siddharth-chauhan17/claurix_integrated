@@ -2,7 +2,6 @@
 
 import type { ComparisonStatus } from "@/lib/qcr-editing/types";
 import { STATUS_LABELS } from "@/lib/qcr-editing/status-styles";
-import { clearPersistedQcrWorkspace } from "@/lib/qcr-editing/mock-api";
 import {
   useQcrEditingStore,
   useVisibleClauses,
@@ -17,19 +16,18 @@ const STATUS_FILTERS: ComparisonStatus[] = [
 ];
 
 export function WorkspaceToolbar() {
-  const workspace = useQcrEditingStore((s) => s.workspace);
   const filter = useQcrEditingStore((s) => s.ui.filter);
   const isSaving = useQcrEditingStore((s) => s.ui.isSaving);
   const saveError = useQcrEditingStore((s) => s.ui.saveError);
   const setFilter = useQcrEditingStore((s) => s.setFilter);
-  const saveWorkspace = useQcrEditingStore((s) => s.saveWorkspace);
-  const loadWorkspace = useQcrEditingStore((s) => s.loadWorkspace);
   const toggleRightPanel = useQcrEditingStore((s) => s.toggleRightPanel);
   const rightPanelOpen = useQcrEditingStore((s) => s.ui.rightPanelOpen);
 
   const visibleClauses = useVisibleClauses();
   const visibleCount = visibleClauses.length;
-  const hasUnsaved = useQcrEditingStore((s) => s.draft.dirtyClauseIds.length > 0);
+  const pendingRemarkDrafts = useQcrEditingStore(
+    (s) => s.draft.remarkDrafts.length
+  );
 
   const toggleStatus = (status: ComparisonStatus) => {
     const current = filter.statuses ?? [];
@@ -108,42 +106,27 @@ export function WorkspaceToolbar() {
       </span>
 
       <div className="ml-auto flex items-center gap-2">
-        {hasUnsaved ? (
+        {isSaving ? (
+          <span className="hidden text-xs font-medium text-slate-500 sm:inline">
+            Saving…
+          </span>
+        ) : null}
+        {!isSaving && pendingRemarkDrafts > 0 ? (
           <span className="hidden text-xs font-medium text-amber-600 sm:inline">
-            Unsaved
+            {pendingRemarkDrafts} draft{pendingRemarkDrafts !== 1 ? "s" : ""}
           </span>
         ) : null}
         {saveError ? (
-          <span className="max-w-[120px] truncate text-xs text-red-600" title={saveError}>
+          <span className="max-w-[160px] truncate text-xs text-red-600" title={saveError}>
             Save failed
           </span>
         ) : null}
-        <button
-          type="button"
-          onClick={() => void saveWorkspace()}
-          disabled={isSaving}
-          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-        >
-          {isSaving ? "Saving…" : "Save"}
-        </button>
         <button
           type="button"
           onClick={handleExport}
           className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
         >
           Export
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            if (!workspace) return;
-            clearPersistedQcrWorkspace(workspace.workspace_id);
-            void loadWorkspace(workspace.meta.project_id);
-          }}
-          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
-          title="Discard local save and reload AI comparison data"
-        >
-          Reload AI data
         </button>
         <button
           type="button"

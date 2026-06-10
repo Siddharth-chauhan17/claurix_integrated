@@ -1,7 +1,6 @@
 "use client";
 
-import { QCR_SECTIONS } from "@/lib/qcr-editing/types";
-import { countClausesBySection } from "@/lib/qcr-editing/selectors";
+import { countClausesBySection, resolveWorkspaceSections } from "@/lib/qcr-editing/selectors";
 import { useQcrEditingStore } from "@/lib/qcr-editing/workspace-store";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -24,7 +23,8 @@ export function SectionSidebar() {
   const toggleSidebar = useQcrEditingStore((s) => s.toggleSidebar);
   const dirtyCount = useQcrEditingStore((s) => s.draft.dirtyClauseIds.length);
 
-  const counts = countClausesBySection(clauses);
+  const sections = resolveWorkspaceSections(workspace);
+  const counts = countClausesBySection(clauses, sections);
   const reviewedCount = clauses.reduce(
     (n, c) => n + c.comparisons.filter((x) => x.reviewed).length,
     0
@@ -111,7 +111,7 @@ export function SectionSidebar() {
             Sections
           </p>
         ) : null}
-        {QCR_SECTIONS.map((section) => {
+        {sections.map((section) => {
           const active = section.id === activeSectionId;
           return (
             <button
@@ -132,7 +132,8 @@ export function SectionSidebar() {
               {collapsed ? (
                 <>
                   <span className="text-[10px] font-bold">
-                    {SECTION_SHORT[section.id]}
+                    {SECTION_SHORT[section.id] ??
+                      section.label.slice(0, 2).toUpperCase()}
                   </span>
                   <span
                     className={cn(

@@ -23,9 +23,14 @@ const NAV_ITEMS: {
   }) => number;
 }[] = [
   {
-    stage: "workstation",
-    label: "Workstation",
+    stage: "document-upload",
+    label: "Upload documents",
     icon: ProjectsIcon,
+  },
+  {
+    stage: "policy-mapping",
+    label: "Policy mapping",
+    icon: DocumentsIcon,
   },
   {
     stage: "rfq-upload",
@@ -46,6 +51,7 @@ function NavItem({
   active,
   collapsed,
   count,
+  disabled,
   onClick,
   icon: Icon,
 }: {
@@ -53,6 +59,7 @@ function NavItem({
   active: boolean;
   collapsed: boolean;
   count: number;
+  disabled?: boolean;
   onClick: () => void;
   icon: ComponentType<{ className?: string }>;
 }) {
@@ -60,10 +67,12 @@ function NavItem({
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       title={collapsed ? label : undefined}
       className={cn(
         "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
         collapsed && "justify-center px-2",
+        disabled && "cursor-not-allowed opacity-50",
         active
           ? "bg-primary-50 text-primary-800"
           : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
@@ -103,7 +112,9 @@ export function WorkflowSidebar() {
   const setStage = useProjectWorkspaceStore((s) => s.setStage);
 
   const resolvedStage: WorkflowStageId =
-    currentStage === "policy-mapping" ? "workstation" : currentStage;
+    currentStage === "workstation" ? "policy-mapping" : currentStage;
+
+  const canOpenPolicyMapping = Boolean(rfqWorkbook) && quoteFiles.length > 0;
 
   return (
     <aside
@@ -158,6 +169,9 @@ export function WorkflowSidebar() {
                 icon={icon}
                 active={resolvedStage === stage}
                 collapsed={collapsed}
+                disabled={
+                  stage === "policy-mapping" && !canOpenPolicyMapping
+                }
                 count={
                   count
                     ? count({
@@ -166,7 +180,13 @@ export function WorkflowSidebar() {
                       })
                     : 0
                 }
-                onClick={() => setStage(stage)}
+                onClick={() => {
+                  if (stage === "policy-mapping" && !canOpenPolicyMapping) {
+                    setStage("document-upload");
+                    return;
+                  }
+                  setStage(stage);
+                }}
               />
             </li>
           ))}

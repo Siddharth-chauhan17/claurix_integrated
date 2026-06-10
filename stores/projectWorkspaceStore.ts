@@ -82,9 +82,12 @@ type ProjectWorkspaceState = {
   restoreRfqFileBlob: (projectId: string) => Promise<void>;
   persist: () => void;
   setStage: (stage: WorkflowStageId) => void;
+  proceedToPolicyMapping: () => boolean;
   toggleSidebar: () => void;
   setRfqWorkbook: (workbook: RfqWorkbook, sourceFile: File) => void;
+  setRfqServerDocumentId: (documentId: string) => void;
   addQuoteFiles: (files: File[]) => void;
+  setQuoteServerDocumentId: (quoteFileId: string, documentId: string) => void;
   downloadRfqFile: () => void;
   downloadQuoteFile: (id: string) => void;
   setActiveSheet: (name: string) => void;
@@ -141,7 +144,7 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
   projectName: "",
   clientName: "",
   clientId: null,
-  currentStage: "workstation",
+  currentStage: "document-upload",
   sidebarCollapsed: false,
   rfqWorkbook: null,
   rfqFileBlob: null,
@@ -173,11 +176,15 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
   hydrate: (projectId) => {
     const saved = loadPersistedWorkspace(projectId);
     if (saved) {
+      let stage = saved.currentStage;
+      if (stage === "workstation") {
+        stage = saved.rfqWorkbook ? "policy-mapping" : "document-upload";
+      }
+      if (stage === "policy-mapping" && !saved.rfqWorkbook) {
+        stage = "document-upload";
+      }
       set({
-        currentStage:
-          saved.currentStage === "policy-mapping"
-            ? "workstation"
-            : saved.currentStage,
+        currentStage: stage,
         sidebarCollapsed: saved.sidebarCollapsed,
         rfqWorkbook: saved.rfqWorkbook,
         // Blob is restored asynchronously from IndexedDB (see restoreRfqFileBlob).
@@ -190,7 +197,7 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
         hydrated: true,
       });
     } else {
-      set({ hydrated: true });
+      set({ hydrated: true, currentStage: "document-upload" });
     }
     void get().restoreRfqFileBlob(projectId);
   },
@@ -214,8 +221,35 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
   },
 
   setStage: (stage) => {
-    set({ currentStage: stage });
+    const { rfqWorkbook } = get();
+    if (stage === "policy-mapping" && !rfqWorkbook) {
+      set({ currentStage: "document-upload" });
+    } else {
+      set({ currentStage: stage });
+    }
     get().persist();
+  },
+
+  proceedToPolicyMapping: () => {
+    const { rfqWorkbook, quoteFiles } = get();
+    if (!rfqWorkbook) {
+      set({
+        selectionNotice: "Upload the RFQ Excel workbook before continuing.",
+      });
+      return false;
+    }
+    if (quoteFiles.length === 0) {
+      set({
+        selectionNotice: "Upload at least one carrier quote before continuing.",
+      });
+      return false;
+    }
+    set({
+      currentStage: "policy-mapping",
+      selectionNotice: null,
+    });
+    get().persist();
+    return true;
   },
 
   toggleSidebar: () => {
@@ -230,7 +264,7 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
       rfqWorkbook: workbook,
       rfqFileBlob: sourceFile,
       activeSheetName: firstSheet,
-      currentStage: "workstation",
+      currentStage: "document-upload",
       saveStatus: "unsaved",
     });
     if (projectId) {
@@ -240,6 +274,16 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
         /* non-fatal; in-memory blob still available this session */
       });
     }
+    get().persist();
+  },
+
+  setRfqServerDocumentId: (documentId) => {
+    const { rfqWorkbook } = get();
+    if (!rfqWorkbook) return;
+    set({
+      rfqWorkbook: { ...rfqWorkbook, serverDocumentId: documentId },
+      saveStatus: "unsaved",
+    });
     get().persist();
   },
 
@@ -260,6 +304,16 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
         saveStatus: "unsaved" as const,
       };
     });
+    get().persist();
+  },
+
+  setQuoteServerDocumentId: (quoteFileId, documentId) => {
+    set((s) => ({
+      quoteFiles: s.quoteFiles.map((q) =>
+        q.id === quoteFileId ? { ...q, serverDocumentId: documentId } : q
+      ),
+      saveStatus: "unsaved" as const,
+    }));
     get().persist();
   },
 

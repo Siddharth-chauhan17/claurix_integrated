@@ -49,7 +49,7 @@ export default function LoginPage() {
       }
       if (data.user) {
         setUser(data.user);
-        router.push("/");
+        router.push("/workstation");
         return;
       }
       setError("Invalid response from server");
@@ -62,7 +62,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (user) router.replace("/");
+    if (user) router.replace("/workstation");
   }, [user, authLoading, router]);
 
   if (authLoading) {
@@ -83,12 +83,12 @@ export default function LoginPage() {
           Welcome Back
         </h1>
         <p className="mt-2 text-center text-slate-600">
-          Sign in to your account
+          Log in to your account
         </p>
 
         <div className="mt-8 space-y-5">
           <GoogleButton type="button" onClick={handleGoogleClick}>
-            Sign in with Google
+            Log in with Google
           </GoogleButton>
 
           <DividerWithOr />
@@ -147,7 +147,7 @@ export default function LoginPage() {
               className="w-full py-2.5"
               disabled={loading}
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? "Logging in..." : "Log in"}
             </Button>
           </form>
 

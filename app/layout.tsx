@@ -4,9 +4,9 @@ import { ToastProvider } from "@/components/providers/ToastProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Insurify – Understand Your Insurance Policy Before It's Too Late",
+  title: "claurix – AI Quote Comparison Reports for Insurance Brokers",
   description:
-    "Upload your policy and detect hidden exclusions, risky clauses, and claim risks before it's too late.",
+    "AI-powered QCR platform built to streamline broker workflows, compare insurer quotes, and deliver consistent quote comparison reports every time.",
 };
 
 export default function RootLayout({

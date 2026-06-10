@@ -1,6 +1,10 @@
 # Dependencies
 node_modules/
 backend/.venv/
+model/.venv/
+
+# Model runtime artifacts (generated on API run)
+model/backend/storage/
 
 # Build / cache
 .next/

@@ -11,3 +11,277 @@ body {
   color: var(--foreground);
   background: var(--background);
 }
+
+/* ─── Project workstation grid ─── */
+.pw-grid-wrap {
+  --pw-select: rgba(14, 165, 233, 0.22);
+  --pw-select-edge: #0ea5e9;
+}
+
+.pw-grid-wrap--selecting {
+  user-select: none;
+}
+
+.pw-grid-wrap--selecting .pw-grid {
+  cursor: default;
+}
+
+.pw-grid .ag-row {
+  transition: box-shadow 0.12s ease;
+}
+
+.pw-grid .ag-row .ag-cell {
+  transition: none;
+}
+
+/* Row index — selection handle only */
+.pw-grid .pw-row-index-col {
+  padding: 0 !important;
+  border-right: 1px solid #e2e8f0 !important;
+}
+
+.pw-row-index-cell {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 0 6px;
+  cursor: ns-resize;
+  user-select: none;
+}
+
+.pw-row-index-cell__grip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.pw-row-index-cell__grip span {
+  display: block;
+  height: 2px;
+  width: 3px;
+  border-radius: 1px;
+  background: #94a3b8;
+}
+
+.pw-grid .ag-row:hover .pw-row-index-cell__grip,
+.pw-grid-wrap--selecting .pw-row-index-cell__grip {
+  opacity: 1;
+}
+
+.pw-row-index-cell__num {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: #64748b;
+}
+
+/* Live row highlight during selection (backup + drag feedback) */
+.pw-grid .pw-row-selecting-live .ag-cell,
+.pw-grid .pw-row-selected-pending .ag-cell {
+  background-color: rgba(14, 165, 233, 0.12) !important;
+  transition: none !important;
+}
+
+.pw-grid .pw-row-selecting-live .pw-row-index-col,
+.pw-grid .pw-row-selected-pending .pw-row-index-col {
+  background-color: rgba(14, 165, 233, 0.18) !important;
+  box-shadow: inset 3px 0 0 var(--pw-select-edge);
+  transition: none !important;
+}
+
+/* Rows that left the selection — ensure default cell background returns immediately */
+.pw-grid .ag-row:not(.pw-row-selecting-live):not(.pw-row-selected-pending) .ag-cell {
+  transition: none !important;
+}
+
+/* Selection region overlay (fixed position) */
+.pw-selection-region {
+  pointer-events: none;
+}
+
+.pw-selection-band__fill {
+  position: absolute;
+  inset: 0;
+  background: var(--pw-select);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.pw-selection-band__fill--dragging {
+  background: rgba(14, 165, 233, 0.28);
+}
+
+.pw-selection-band__accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--pw-select-edge);
+  border-radius: 2px 0 0 2px;
+  box-shadow: 0 0 8px rgba(14, 165, 233, 0.35);
+  pointer-events: none;
+}
+
+.pw-selection-band__edge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--pw-select-edge);
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+.pw-selection-band__edge--top {
+  top: 0;
+}
+
+.pw-selection-band__edge--bottom {
+  bottom: 0;
+}
+
+.pw-selection-handle {
+  position: absolute;
+  left: 50%;
+  z-index: 2;
+  height: 10px;
+  width: 48px;
+  transform: translateX(-50%);
+  border-radius: 4px;
+  border: 2px solid var(--pw-select-edge);
+  background: white;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.15);
+  cursor: ns-resize;
+}
+
+.pw-selection-handle--top {
+  top: -5px;
+}
+
+.pw-selection-handle--bottom {
+  bottom: -5px;
+}
+
+.pw-selection-handle:hover {
+  background: #e0f2fe;
+}
+
+.pw-selection-label {
+  position: absolute;
+  right: 8px;
+  top: 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #0369a1;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+/* Mapped operational blocks */
+.pw-grid .pw-map-block {
+  --pw-map-color: #64748b;
+}
+
+.pw-grid .pw-map-block .ag-cell {
+  border-top-color: transparent !important;
+}
+
+.pw-grid .pw-map-block--start .ag-cell,
+.pw-grid .pw-map-block--single .ag-cell {
+  border-top: 1px solid color-mix(in srgb, var(--pw-map-color) 35%, transparent) !important;
+}
+
+.pw-grid .pw-map-block--end .ag-cell,
+.pw-grid .pw-map-block--single .ag-cell {
+  border-bottom: 1px solid color-mix(in srgb, var(--pw-map-color) 35%, transparent) !important;
+}
+
+.pw-grid .pw-map-block .pw-row-index-col {
+  box-shadow: inset 4px 0 0 var(--pw-map-color);
+  background: color-mix(in srgb, var(--pw-map-color) 8%, white);
+}
+
+.pw-grid .pw-map-block--middle .pw-row-index-col,
+.pw-grid .pw-map-block--end .pw-row-index-col {
+  background: color-mix(in srgb, var(--pw-map-color) 6%, white);
+}
+
+.pw-grid .pw-map-block--hover .pw-row-index-col {
+  background: color-mix(in srgb, var(--pw-map-color) 14%, white);
+  box-shadow: inset 4px 0 0 var(--pw-map-color), 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+.pw-grid .pw-map-block--active .pw-row-index-col {
+  background: color-mix(in srgb, var(--pw-map-color) 18%, white);
+  box-shadow: inset 4px 0 0 var(--pw-map-color), 0 0 0 1px color-mix(in srgb, var(--pw-map-color) 25%, transparent);
+}
+
+.pw-grid .pw-data-col {
+  background: color-mix(in srgb, var(--pw-map-color) 4%, white);
+}
+
+.pw-grid .pw-map-block--hover .pw-data-col {
+  background: color-mix(in srgb, var(--pw-map-color) 7%, white);
+}
+
+/* Policy region badge */
+.pw-policy-badge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pw-map-color);
+  background: color-mix(in srgb, var(--pw-map-color) 14%, white);
+  border: 1px solid color-mix(in srgb, var(--pw-map-color) 28%, transparent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pw-policy-empty {
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.pw-policy-continuation {
+  display: block;
+  width: 8px;
+  height: 2px;
+  margin-top: 14px;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--pw-map-color) 40%, transparent);
+}
+
+/* Assign menu */
+.pw-menu-backdrop {
+  background: rgba(15, 23, 42, 0);
+  transition: background 0.2s ease;
+}
+
+.pw-menu-backdrop--open {
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.pw-assign-menu {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  transition:
+    opacity 0.18s ease,
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pw-assign-menu--open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}

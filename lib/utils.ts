@@ -1,5 +1,5 @@
 /**
- * Shared utilities for the Insurify frontend.
+ * Shared utilities for the claurix frontend.
  */
 
 export function cn(...classes: (string | undefined | false)[]): string {

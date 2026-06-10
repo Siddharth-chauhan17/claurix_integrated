@@ -1,149 +1,144 @@
+const projects = [
+  {
+    name: "Marina Towers",
+    location: "New York",
+    qcrs: 8,
+    progress: 75,
+    status: "On Track" as const,
+  },
+  {
+    name: "Green Mall",
+    location: "Chicago",
+    qcrs: 5,
+    progress: 50,
+    status: "On Track" as const,
+  },
+  {
+    name: "Tech Park",
+    location: "San Francisco",
+    qcrs: 2,
+    progress: 25,
+    status: "Overdue" as const,
+  },
+  {
+    name: "City Plaza",
+    location: "Los Angeles",
+    qcrs: 6,
+    progress: 100,
+    status: "On Track" as const,
+  },
+  {
+    name: "Riverside",
+    location: "Boston",
+    qcrs: 3,
+    progress: 66,
+    status: "On Track" as const,
+  },
+];
+
 export function HeroDashboardMockup() {
   return (
-    <div className="relative">
-      {/* Layered document outlines (background) */}
-      <div className="absolute -right-4 -top-2 h-64 w-52 rounded-xl border border-slate-200 bg-white/60 shadow-lg" />
-      <div className="absolute -right-2 top-2 h-64 w-52 rounded-xl border border-slate-200 bg-white/80 shadow-md" />
+    <div className="relative w-full max-w-2xl xl:max-w-3xl">
+      <div
+        className="pointer-events-none absolute -right-6 top-6 h-80 w-80 rounded-full border border-dashed border-slate-200"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -left-4 bottom-4 h-32 w-32 rounded-full bg-primary-100/40 blur-2xl"
+        aria-hidden
+      />
 
-      {/* Main analysis card */}
-      <div className="relative z-10 w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-xl sm:max-w-md">
-        <div className="mb-4 flex items-center gap-2">
-          <span className="rounded bg-slate-100 p-1.5">
-            <DocumentIcon className="h-5 w-5 text-slate-600" />
-          </span>
-          <span className="font-medium text-slate-800">Insurance Policy.pdf</span>
-        </div>
+      {/* Outer frame */}
+      <div className="relative rounded-[1.75rem] border border-slate-200/90 bg-gradient-to-br from-white via-slate-50/80 to-white p-3 shadow-[0_8px_30px_rgba(15,23,42,0.06)] sm:p-4">
+        {/* Inner card */}
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_50px_-12px_rgba(15,23,42,0.14)] ring-1 ring-slate-100">
+          <div className="border-b border-slate-100 bg-slate-50/80 px-6 py-4 sm:px-7">
+            <h3 className="text-lg font-bold text-slate-900">Projects</h3>
+            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+              <Stat label="Total QCRs" value="24" />
+              <Stat label="Active" value="18" valueClass="text-primary-600" />
+              <Stat label="Escalated" value="6" />
+              <Stat label="Overdue" value="3" valueClass="text-red-500" />
+            </div>
+          </div>
 
-        <div className="mb-4">
-          <span className="inline-flex items-center rounded-full bg-primary-100 px-3 py-1 text-xs font-medium text-primary-700">
-            Detected: General Liability Insurance
-          </span>
-        </div>
+          <div className="px-4 py-4 sm:px-6 sm:py-5">
+            <div className="overflow-x-auto rounded-xl border border-slate-100 bg-white">
+              <table className="w-full min-w-[420px] text-left text-xs sm:text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/60 text-slate-500">
+                    <th className="px-4 py-3 font-medium">Project Name</th>
+                    <th className="px-3 py-3 font-medium">Location</th>
+                    <th className="px-3 py-3 font-medium">QCRs</th>
+                    <th className="px-3 py-3 font-medium">Progress</th>
+                    <th className="px-4 py-3 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {projects.map((project) => (
+                    <tr
+                      key={project.name}
+                      className="border-b border-slate-50 last:border-0"
+                    >
+                      <td className="px-4 py-3 font-medium text-slate-800">
+                        {project.name}
+                      </td>
+                      <td className="px-3 py-3 text-slate-600">{project.location}</td>
+                      <td className="px-3 py-3 text-slate-600">{project.qcrs}</td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100">
+                            <div
+                              className="h-full rounded-full bg-primary-500"
+                              style={{ width: `${project.progress}%` }}
+                            />
+                          </div>
+                          <span className="text-slate-600">{project.progress}%</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={
+                            project.status === "Overdue"
+                              ? "font-medium text-red-500"
+                              : "font-medium text-primary-600"
+                          }
+                        >
+                          {project.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-        <ul className="space-y-3 text-sm text-slate-600">
-          <li className="flex gap-2">
-            <RiskyClauseIcon className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-            <span>
-              <strong className="text-slate-700">Risky clauses:</strong> Excludes
-              coverage for machinery breakdowns if maintenance logs are missing.
-            </span>
-          </li>
-          <li className="flex gap-2">
-            <ExclusionIcon className="mt-0.5 h-4 w-4 shrink-0 text-primary-500" />
-            <span>
-              <strong className="text-slate-700">Exclusions:</strong> Natural
-              disasters, cyber incidents, employee injuries.
-            </span>
-          </li>
-          <li className="flex gap-2">
-            <HiddenIcon className="mt-0.5 h-4 w-4 shrink-0 text-sky-500" />
-            <span>
-              <strong className="text-slate-700">Hidden conditions:</strong>{" "}
-              Annual inspection required, documentation rules.
-            </span>
-          </li>
-        </ul>
-
-        <div className="mt-4 pt-4 border-t border-slate-100">
-          <button
-            type="button"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-600 transition-colors"
-          >
-            View full analysis
-            <ArrowRightIcon className="h-4 w-4" />
-          </button>
+            <button
+              type="button"
+              className="mt-5 w-full rounded-xl border-2 border-primary-500 bg-white px-4 py-3 text-sm font-semibold text-primary-600 transition hover:bg-primary-50"
+            >
+              View All Projects
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function DocumentIcon({ className }: { className?: string }) {
+function Stat({
+  label,
+  value,
+  valueClass = "text-slate-900",
+}: {
+  label: string;
+  value: string;
+  valueClass?: string;
+}) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-      />
-    </svg>
-  );
-}
-
-function RiskyClauseIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-      />
-    </svg>
-  );
-}
-
-function ExclusionIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-      />
-    </svg>
-  );
-}
-
-function HiddenIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-  );
-}
-
-function ArrowRightIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M17 8l4 4m0 0l-4 4m4-4H3"
-      />
-    </svg>
+    <div>
+      <span className="text-slate-500">{label}: </span>
+      <span className={`font-semibold ${valueClass}`}>{value}</span>
+    </div>
   );
 }

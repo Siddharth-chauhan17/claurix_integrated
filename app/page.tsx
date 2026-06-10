@@ -1,19 +1,17 @@
 import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
 import { Hero } from "@/components/landing/Hero";
-import { HowItWorks } from "@/components/landing/HowItWorks";
+import { LandingGuestSections } from "@/components/landing/LandingGuestSections";
+import { WorkflowStepsSection } from "@/components/landing/WorkflowStepsSection";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-[#f7f8f9]">
       <Navbar />
-      <main className="flex-1">
+      <main>
         <Hero />
-        <section id="how-it-works" className="scroll-mt-20">
-          <HowItWorks />
-        </section>
+        <WorkflowStepsSection />
+        <LandingGuestSections />
       </main>
-      <Footer />
     </div>
   );
 }

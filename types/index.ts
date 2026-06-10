@@ -1,5 +1,5 @@
 /**
- * Shared TypeScript types for the Insurify frontend.
+ * Shared TypeScript types for the claurix frontend.
  */
 
 export type {};

@@ -27,11 +27,13 @@ class Settings(BaseSettings):
     )
 
     # App
-    app_name: str = "Insurify API"
+    app_name: str = "claurix API"
     debug: bool = False
+    # Set RESET_IDENTITY_ON_STARTUP=true to wipe users/orgs/clients on startup (pre-prod only)
+    reset_identity_on_startup: bool = False
 
     # Database
-    database_url: str = "postgresql://postgres:postgres@localhost:5432/insurify"
+    database_url: str = "postgresql://postgres:postgres@localhost:5432/claurix"
 
     # JWT
     secret_key: str = "change-me-in-production-use-openssl-rand-hex-32"

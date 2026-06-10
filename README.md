@@ -1,6 +1,6 @@
-# Insurify
+# claurix
 
-AI-native commercial insurance workflow platform — policy analysis, authentication, and placement workflows.
+AI-native commercial insurance workflow platform — enterprise QCR workspace, authentication, and broker placement workflows.
 
 ## Stack
 
@@ -60,14 +60,12 @@ uvicorn app.main:app --reload --port 8000
 ## Project structure
 
 ```
-insurify/
-├── app/                 # Next.js pages (analyze, auth, dashboard)
+claurix/
+├── app/                 # Next.js pages (workspace, auth, dashboard, request-demo)
 ├── components/          # React UI
 ├── lib/                 # API client
 ├── backend/
-│   ├── app/             # FastAPI app (auth, models, config)
-│   ├── routes/          # Analysis routes
-│   ├── services/        # AI service integration
+│   ├── app/             # FastAPI app (auth, demo requests, models, config)
 │   └── scripts/         # DB init
 └── docker-compose.yml
 ```
@@ -79,8 +77,8 @@ insurify/
 | POST | `/auth/signup`, `/auth/login` | Email auth |
 | GET | `/auth/google` | Google OAuth |
 | GET | `/auth/me` | Current user |
-| POST | `/analyze-policy` | Upload policy PDF |
-| GET | `/history` | Analysis history |
+| POST | `/demo-requests` | Submit demo request |
+| GET | `/demo-requests` | List demo requests (internal) |
 
 ## License
 

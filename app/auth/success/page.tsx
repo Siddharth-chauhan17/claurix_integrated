@@ -15,7 +15,7 @@ function SuccessContent() {
 
   useEffect(() => {
     if (error) return;
-    toast.success("Signed in successfully with Google 🎉");
+    toast.success("Logged in successfully with Google 🎉");
     getCurrentUser().then((u) => {
       if (u) setUser(u);
     });
@@ -26,7 +26,7 @@ function SuccessContent() {
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-slate-50 px-4">
-        <p className="text-red-600">Sign in failed: {error}</p>
+        <p className="text-red-600">Log in failed: {error}</p>
         <Link href="/login" className="text-primary-600 hover:text-primary-700 hover:underline">
           Back to login
         </Link>
@@ -36,7 +36,7 @@ function SuccessContent() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-4">
-      <p className="text-slate-700 text-lg">Signing you in...</p>
+      <p className="text-slate-700 text-lg">Logging you in...</p>
     </div>
   );
 }
@@ -46,7 +46,7 @@ export default function AuthSuccessPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-slate-50">
-          <p className="text-slate-600">Signing you in...</p>
+          <p className="text-slate-600">Logging you in...</p>
         </div>
       }
     >

@@ -50,7 +50,7 @@ export default function SignUpPage() {
       }
       if (data.user) {
         setUser(data.user);
-        router.push("/");
+        router.push("/workstation");
         return;
       }
       setError("Invalid response from server");
@@ -63,7 +63,7 @@ export default function SignUpPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (user) router.replace("/");
+    if (user) router.replace("/workstation");
   }, [user, authLoading, router]);
 
   if (authLoading) {
@@ -84,7 +84,7 @@ export default function SignUpPage() {
           Create your account
         </h1>
         <p className="mt-2 text-center text-sm text-slate-600">
-          Get started with Insurify
+          Get started with claurix
         </p>
 
         <div className="mt-8 space-y-5">
@@ -167,7 +167,7 @@ export default function SignUpPage() {
               href="/login"
               className="font-medium text-primary-600 hover:text-primary-700 hover:underline"
             >
-              Sign in
+              Log in
             </Link>
           </p>
         </div>

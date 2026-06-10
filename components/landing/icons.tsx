@@ -80,6 +80,47 @@ export function ChatBubbleCheckIcon({ className }: { className?: string }) {
   );
 }
 
+export function ChartBarsIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 19V5m0 14h16M8 17V9m4 8V7m4 10v-4" />
+    </svg>
+  );
+}
+
+export function GridIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+    </svg>
+  );
+}
+
+export function UserCheckIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16 11l2 2 4-4" />
+    </svg>
+  );
+}
+
+export function ShieldIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+    </svg>
+  );
+}
+
+export function BoltIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+    </svg>
+  );
+}
+
 export function DocumentCheckIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -99,6 +140,62 @@ export function DocumentCheckIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         d="M9 12l2 2 4-4"
       />
+    </svg>
+  );
+}
+
+export function UploadDocumentIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 8h4" />
+    </svg>
+  );
+}
+
+export function ExtractStructureIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h4m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 3v4h4" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l1.5 1.5L13 11" />
+    </svg>
+  );
+}
+
+export function CompareQuotesIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M14 10a2 2 0 11-4 0 2 2 0 014 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16 12l2 2" />
+    </svg>
+  );
+}
+
+export function ReviewDifferencesIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h8m-8 4h5m-5 4h3M6 5a2 2 0 012-2h8l4 4v12a2 2 0 01-2 2H8a2 2 0 01-2-2V5z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M14 3v4h4" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16 13l1.5 1.5L20 12" />
+    </svg>
+  );
+}
+
+export function GenerateQcrIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 4l2 2m0 0l2-2m-2 2v5" />
+    </svg>
+  );
+}
+
+export function ChevronRightSmallIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
     </svg>
   );
 }

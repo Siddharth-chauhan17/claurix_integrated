@@ -27,15 +27,15 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-500 text-white shadow-md">
             <ShieldIcon className="h-6 w-6" />
           </span>
-          <span className="text-xl font-semibold text-slate-800">Insurify</span>
+          <span className="text-xl font-semibold text-slate-800">claurix</span>
         </Link>
         {children}
       </div>
 
       <footer className="relative border-t border-slate-200/60 bg-white/50 py-6 text-center">
-        <p className="text-sm text-slate-500">© {year} Insurify</p>
+        <p className="text-sm text-slate-500">© {year} claurix</p>
         <p className="mt-2 text-xs text-slate-400">
-          By signing in, you agree to our{" "}
+          By logging in, you agree to our{" "}
           <Link href="/terms" className="text-primary-600 hover:underline">
             Terms of Service
           </Link>{" "}

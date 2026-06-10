@@ -3,12 +3,16 @@
 import secrets
 from urllib.parse import quote
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.database import get_db
+from app.deps import get_current_user
+from app.models.user import User
 from app.schemas import (
     LoginRequest,
     LoginResponse,
@@ -29,13 +33,7 @@ ACCESS_TOKEN_MAX_AGE = 60 * 60 * 24  # 24 hours (matches access_token_expire_min
 
 
 def user_to_response(user) -> UserResponse:
-    return UserResponse(
-        id=user.id,
-        name=user.name,
-        email=user.email,
-        created_at=user.created_at,
-        google_id=user.google_id,
-    )
+    return UserResponse.model_validate(user)
 
 
 @router.post(
@@ -94,7 +92,7 @@ def signup(
 @router.post(
     "/login",
     response_model=LoginResponse,
-    summary="Sign in with email and password",
+    summary="Log in with email and password",
 )
 def login(
     payload: LoginRequest,
@@ -140,26 +138,8 @@ def login(
     response_model=UserResponse,
     summary="Get current user from cookie",
 )
-def me(request: Request, db: Session = Depends(get_db)) -> UserResponse:
+def me(user: Annotated[User, Depends(get_current_user)]) -> UserResponse:
     """Return the current user from the access_token cookie. 401 if no valid token."""
-    token = request.cookies.get(ACCESS_TOKEN_COOKIE)
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-    user_id = auth_service.decode_token(token)
-    if not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-        )
-    user = auth_service.get_user_by_id(db, int(user_id))
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
     return user_to_response(user)
 
 
@@ -247,7 +227,7 @@ def auth_google_callback(
         redirect_url = f"{OAUTH_SUCCESS_REDIRECT}?error={quote(str(e))}"
         return RedirectResponse(url=redirect_url, status_code=status.HTTP_302_FOUND)
 
-    access_token, _ = auth_service.create_access_token_oauth({"sub": str(user.id)})
+    access_token, _ = auth_service.create_access_token(user.id)
     response = RedirectResponse(url=OAUTH_SUCCESS_REDIRECT, status_code=status.HTTP_302_FOUND)
     response.set_cookie(
         key=ACCESS_TOKEN_COOKIE,

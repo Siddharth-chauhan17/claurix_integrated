@@ -8,9 +8,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Application code
 COPY app ./app
-COPY routes ./routes
-COPY models ./models
-COPY services ./services
 COPY scripts ./scripts
 
 # Ensure init_db can be run as module from /app

@@ -2,7 +2,7 @@ import Link from "next/link";
 
 const footerLinks = {
   product: [
-    { label: "Analyze", href: "/analyze" },
+    { label: "Workspace", href: "/workspace" },
     { label: "How it works", href: "/#how-it-works" },
   ],
   company: [
@@ -20,7 +20,7 @@ export function Footer() {
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-500 text-white">
               <ShieldIcon className="h-5 w-5" />
             </span>
-            <span className="text-lg font-semibold text-slate-800">Insurify</span>
+            <span className="text-lg font-semibold text-slate-800">claurix</span>
           </div>
           <div className="flex gap-12">
             <div>
@@ -56,7 +56,7 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-12 border-t border-slate-200 pt-8 text-center text-sm text-slate-500">
-          © {new Date().getFullYear()} Insurify. All rights reserved.
+          © {new Date().getFullYear()} claurix. All rights reserved.
         </div>
       </div>
     </footer>

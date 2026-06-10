@@ -1,18 +1,23 @@
 {
-  "name": "insurify",
+  "name": "claurix",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
+    "ag-grid-community": "^35.3.0",
+    "ag-grid-react": "^35.3.0",
     "next": "^14.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-toastify": "^10.0.6"
+    "react-toastify": "^10.0.6",
+    "xlsx": "^0.18.5",
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

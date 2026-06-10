@@ -16,11 +16,206 @@ export function getGoogleOAuthUrl(): string {
 
 /** User shape returned by GET /auth/me (matches backend UserResponse). */
 export interface User {
-  id: number;
+  id: string;
+  organization_id: string;
+  employee_id: string;
   name: string;
   email: string;
   created_at: string;
+  updated_at: string;
   google_id: string | null;
+}
+
+export type Client = {
+  id: string;
+  organization_id: string;
+  name: string;
+  industry: string | null;
+  contact_name: string | null;
+  contact_email: string | null;
+  notes: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  last_worked_at: string;
+};
+
+export type ClientCreatePayload = {
+  name: string;
+  industry?: string;
+  contact_name?: string;
+  contact_email?: string;
+  notes?: string;
+};
+
+export type ClientListResponse = {
+  count: number;
+  items: Client[];
+};
+
+export type ProjectStatus = "active" | "completed";
+
+export type Project = {
+  id: string;
+  organization_id: string;
+  client_id: string;
+  client_name: string;
+  name: string;
+  location: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  last_worked_at: string;
+  status: ProjectStatus;
+};
+
+export type ProjectListResponse = {
+  count: number;
+  items: Project[];
+};
+
+async function parseApiError(res: Response, fallback: string): Promise<string> {
+  try {
+    const err = await res.json();
+    if (typeof err.detail === "string") return err.detail;
+    if (Array.isArray(err.detail))
+      return err.detail.map((d: { msg?: string }) => d.msg).join(", ");
+  } catch {
+    /* ignore */
+  }
+  return fallback;
+}
+
+export async function listClients(
+  search?: string,
+  limit?: number
+): Promise<ClientListResponse> {
+  const params = new URLSearchParams();
+  if (search?.trim()) params.set("search", search.trim());
+  if (limit != null) params.set("limit", String(limit));
+  const q = params.toString() ? `?${params.toString()}` : "";
+  const res = await fetch(`${API_BASE_URL}/clients${q}`, {
+    credentials: "include",
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to load clients"));
+  }
+  return res.json() as Promise<ClientListResponse>;
+}
+
+export async function getClient(clientId: string): Promise<Client> {
+  const res = await fetch(`${API_BASE_URL}/clients/${encodeURIComponent(clientId)}`, {
+    credentials: "include",
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to load client"));
+  }
+  return res.json() as Promise<Client>;
+}
+
+/** Record that the user opened this client (updates recent-clients order). */
+export async function touchClient(clientId: string): Promise<Client> {
+  const res = await fetch(
+    `${API_BASE_URL}/clients/${encodeURIComponent(clientId)}/touch`,
+    { method: "POST", credentials: "include", cache: "no-store" }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to update client activity"));
+  }
+  return res.json() as Promise<Client>;
+}
+
+export type ProjectCreatePayload = {
+  client_id: string;
+  name: string;
+};
+
+export async function listProjects(
+  options?: { limit?: number; clientId?: string }
+): Promise<ProjectListResponse> {
+  const params = new URLSearchParams();
+  const limit = options?.limit ?? 10;
+  params.set("limit", String(limit));
+  if (options?.clientId) params.set("client_id", options.clientId);
+  const res = await fetch(`${API_BASE_URL}/projects?${params.toString()}`, {
+    credentials: "include",
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to load projects"));
+  }
+  return res.json() as Promise<ProjectListResponse>;
+}
+
+export async function getProject(projectId: string): Promise<Project> {
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}`,
+    { credentials: "include", cache: "no-store" }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to load project"));
+  }
+  return res.json() as Promise<Project>;
+}
+
+/** Record that the user opened this project (updates recent-projects order). */
+export async function touchProject(projectId: string): Promise<Project> {
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/touch`,
+    { method: "POST", credentials: "include", cache: "no-store" }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to update project activity"));
+  }
+  return res.json() as Promise<Project>;
+}
+
+export async function updateProjectStatus(
+  projectId: string,
+  status: ProjectStatus
+): Promise<Project> {
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/status`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      cache: "no-store",
+      body: JSON.stringify({ status }),
+    }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to update project status"));
+  }
+  return res.json() as Promise<Project>;
+}
+
+export async function createProject(payload: ProjectCreatePayload): Promise<Project> {
+  const res = await fetch(`${API_BASE_URL}/projects`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to create project"));
+  }
+  return res.json() as Promise<Project>;
+}
+
+export async function createClient(payload: ClientCreatePayload): Promise<Client> {
+  const res = await fetch(`${API_BASE_URL}/clients`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to create client"));
+  }
+  return res.json() as Promise<Client>;
 }
 
 /**
@@ -28,15 +223,21 @@ export interface User {
  * Returns user or null if not authenticated.
  */
 export async function getCurrentUser(): Promise<User | null> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 5000);
+
   try {
     const res = await fetch(`${API_BASE_URL}/auth/me`, {
       credentials: "include",
+      signal: controller.signal,
     });
     if (!res.ok) return null;
     const user: User = await res.json();
     return user;
   } catch {
     return null;
+  } finally {
+    window.clearTimeout(timeout);
   }
 }
 
@@ -50,43 +251,64 @@ export async function logout(): Promise<void> {
   });
 }
 
-/** Policy analysis API response (matches backend AnalysisResponse). */
-export type ClauseResult = {
-  title: string;
-  risk: string;
-  explanation: string;
+export type DemoRequestPayload = {
+  full_name: string;
+  work_email: string;
+  company_name: string;
+  job_role: string;
+  qcr_generation_method: string;
+  monthly_quote_volume: string;
+  operational_challenges: string[];
+  lines_of_business: string[];
+  review_team_size: string;
+  preferred_demo_date: string;
+  preferred_time_window: string;
+  requested_demo_topics: string[];
+  additional_notes?: string;
+  website?: string;
 };
 
-export type AnalysisResultData = {
-  risk_score: number;
-  risk_level: string;
-  summary: string;
-  risk_flags: string[];
-  clauses: ClauseResult[];
+export type DemoRequestSummary = {
+  id: number;
+  full_name: string;
+  work_email: string;
+  company_name: string;
+  job_role: string;
+  qcr_generation_method: string;
+  monthly_quote_volume: string;
+  operational_challenges: string[];
+  lines_of_business: string[];
+  review_team_size: string;
+  preferred_demo_date: string;
+  preferred_time_window: string;
+  requested_demo_topics: string[];
+  additional_notes: string | null;
+  created_at: string;
+};
+
+export type DemoRequestListResponse = {
+  count: number;
+  items: DemoRequestSummary[];
+};
+
+export type DemoRequestSubmitResponse = {
+  success: boolean;
+  message: string;
 };
 
 /**
- * POST /analyze-policy with multipart file. Sends cookies so httponly JWT is included.
- * Optionally pass Bearer token for non-cookie clients.
+ * POST /demo-requests — public demo lead submission.
  */
-export async function analyzePolicy(
-  file: File,
-  accessToken?: string | null
-): Promise<AnalysisResultData> {
-  const form = new FormData();
-  form.append("file", file);
-  const headers: HeadersInit = {};
-  if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`;
-  }
-  const res = await fetch(`${API_BASE_URL}/analyze-policy`, {
+export async function submitDemoRequest(
+  payload: DemoRequestPayload
+): Promise<DemoRequestSubmitResponse> {
+  const res = await fetch(`${API_BASE_URL}/demo-requests`, {
     method: "POST",
-    body: form,
-    credentials: "include",
-    headers,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    let message = "Analysis failed";
+    let message = "Failed to submit demo request";
     try {
       const err = await res.json();
       if (typeof err.detail === "string") message = err.detail;
@@ -97,5 +319,18 @@ export async function analyzePolicy(
     }
     throw new Error(message);
   }
-  return res.json() as Promise<AnalysisResultData>;
+  return res.json() as Promise<DemoRequestSubmitResponse>;
+}
+
+/**
+ * GET /demo-requests — internal MVP lead visibility.
+ */
+export async function listDemoRequests(
+  limit = 50
+): Promise<DemoRequestListResponse> {
+  const res = await fetch(`${API_BASE_URL}/demo-requests?limit=${limit}`);
+  if (!res.ok) {
+    throw new Error("Failed to fetch demo requests");
+  }
+  return res.json() as Promise<DemoRequestListResponse>;
 }

@@ -13,9 +13,26 @@ export type WorkflowStageId =
 
 export type SheetRow = Record<string, unknown> & { _rowIndex: number };
 
+/** Display + field metadata for a parsed RFQ column. */
+export type SheetColumnMeta = {
+  /** Stable key on SheetRow, e.g. `_c0`. */
+  field: string;
+  /** Excel column letter, e.g. `A`, `B`. */
+  letter: string;
+  /** Human label from detected header row or fallback. */
+  label: string;
+  /** Pin left in the mapping grid when true. */
+  pinned?: boolean;
+};
+
 export type ParsedSheet = {
   name: string;
+  /** Stable field keys on each SheetRow. */
   columns: string[];
+  /** Rich column metadata (optional on legacy persisted workbooks). */
+  columnMeta?: SheetColumnMeta[];
+  /** 1-based Excel row index of detected header, if any. */
+  headerRowIndex?: number | null;
   rows: SheetRow[];
 };
 

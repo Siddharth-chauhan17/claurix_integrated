@@ -9,6 +9,7 @@
  */
 
 import * as XLSX from "xlsx";
+import { findColumnMetaByLetter } from "@/lib/project-workspace/sheetColumns";
 import { resolveRfqBlobForProject } from "@/lib/project-workspace/rfq-blob-access";
 import type { RfqWorkbook } from "@/types/project-workspace";
 import type { ClauseSource } from "./types";
@@ -96,8 +97,8 @@ async function readFromRfqBlob(
 }
 
 /**
- * Fallback when blob unavailable: map A1 column via parsed header row.
- * `_rowIndex` is 1-based index of data rows (Excel row 2 → _rowIndex 1).
+ * Fallback when blob unavailable: map A1 column via parsed workbook.
+ * `_rowIndex` matches the 1-based Excel row number.
  */
 function readFromParsedRfqWorkbook(
   workbook: RfqWorkbook,
@@ -112,12 +113,12 @@ function readFromParsedRfqWorkbook(
   const parsed = parseCellRef(source.clause_cell);
   if (!parsed) return null;
 
-  const colIndex = columnLettersToIndex(parsed.colLetters);
-  const columnKey = sheet.columns[colIndex];
+  const columnMeta = findColumnMetaByLetter(sheet, parsed.colLetters);
+  const columnKey =
+    columnMeta?.field ?? sheet.columns[columnLettersToIndex(parsed.colLetters)];
   if (!columnKey) return null;
 
-  const dataRowIndex = source.excel_row - 1;
-  const dataRow = sheet.rows.find((r) => r._rowIndex === dataRowIndex);
+  const dataRow = sheet.rows.find((r) => r._rowIndex === source.excel_row);
   if (!dataRow) return null;
 
   const formatted = formatCellValue(dataRow[columnKey]);

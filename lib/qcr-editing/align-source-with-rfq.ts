@@ -7,18 +7,8 @@
  */
 
 import type { RfqWorkbook } from "@/types/project-workspace";
+import { findClauseColumns } from "@/lib/project-workspace/sheetColumns";
 import type { ClauseComparison, ClauseSource, QcrWorkspace } from "./types";
-
-function columnIndexToLetters(index: number): string {
-  let n = index + 1;
-  let letters = "";
-  while (n > 0) {
-    const rem = (n - 1) % 26;
-    letters = String.fromCharCode(65 + rem) + letters;
-    n = Math.floor((n - 1) / 26);
-  }
-  return letters;
-}
 
 function findClauseInRfqWorkbook(
   workbook: RfqWorkbook,
@@ -28,28 +18,20 @@ function findClauseInRfqWorkbook(
   if (!target) return null;
 
   for (const sheet of workbook.sheets) {
-    const clauseColKey = sheet.columns[1] ?? sheet.columns[0];
-    if (!clauseColKey) continue;
-
-    const requirementColKey = sheet.columns[2] ?? null;
+    const { clause: clauseCol, requirement: requirementCol } =
+      findClauseColumns(sheet);
+    if (!clauseCol) continue;
 
     for (const row of sheet.rows) {
-      const text = String(row[clauseColKey] ?? "").trim().toLowerCase();
+      const text = String(row[clauseCol.field] ?? "").trim().toLowerCase();
       if (text !== target) continue;
 
-      const excelRow = row._rowIndex + 1;
-      const clauseCol = columnIndexToLetters(
-        Math.max(0, sheet.columns.indexOf(clauseColKey))
-      );
-      const requirementCol = requirementColKey
-        ? columnIndexToLetters(sheet.columns.indexOf(requirementColKey))
-        : "C";
-
+      const excelRow = row._rowIndex;
       return {
         sheet_name: sheet.name,
         excel_row: excelRow,
-        clause_cell: `${clauseCol}${excelRow}`,
-        requirement_cell: `${requirementCol}${excelRow}`,
+        clause_cell: `${clauseCol.letter}${excelRow}`,
+        requirement_cell: `${requirementCol?.letter ?? "C"}${excelRow}`,
         uw_remark_cell: `F${excelRow}`,
       };
     }

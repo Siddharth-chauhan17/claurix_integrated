@@ -30,14 +30,94 @@ body {
   transition: box-shadow 0.12s ease;
 }
 
+.pw-grid--zoomed {
+  zoom: var(--pw-grid-zoom, 1);
+}
+
+.pw-zoom-slider {
+  height: 6px;
+  appearance: none;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    #cbd5e1 0%,
+    #0ea5e9 100%
+  );
+}
+
+.pw-zoom-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  border: 2px solid #fff;
+  background: #0284c7;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+  cursor: grab;
+}
+
+.pw-zoom-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  border: 2px solid #fff;
+  background: #0284c7;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+  cursor: grab;
+}
+
+.pw-zoom-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: #e2e8f0;
+}
+
+.pw-grid .ag-header-cell.pw-col-header .ag-header-cell-label {
+  white-space: pre-line;
+  line-height: 1.25;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.pw-grid .ag-header-cell.pw-col-header .ag-header-cell-text {
+  font-size: 11px;
+}
+
+.pw-grid .pw-data-col {
+  line-height: 1.45;
+  white-space: normal !important;
+  word-break: break-word;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  font-size: 12px;
+}
+
+.pw-grid .pw-data-col--pinned {
+  background: rgba(248, 250, 252, 0.95);
+}
+
 .pw-grid .ag-row .ag-cell {
   transition: none;
+  border-right: 1px solid #cbd5e1 !important;
+}
+
+.pw-grid .ag-header-cell {
+  border-right: 1px solid #94a3b8 !important;
+}
+
+.pw-grid .pw-policy-col {
+  border-right: 1px solid #94a3b8 !important;
+}
+
+.pw-grid .ag-pinned-left-cols-container .ag-row .ag-cell:last-child,
+.pw-grid .ag-pinned-left-header .ag-header-cell:last-child {
+  border-right: 2px solid #94a3b8 !important;
 }
 
 /* Row index — selection handle only */
 .pw-grid .pw-row-index-col {
   padding: 0 !important;
-  border-right: 1px solid #e2e8f0 !important;
+  border-right: 1px solid #94a3b8 !important;
 }
 
 .pw-row-index-cell {

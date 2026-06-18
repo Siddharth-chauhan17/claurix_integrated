@@ -46,6 +46,15 @@ class QcrWorkspaceSaveResponse(BaseModel):
     clause_count: int
 
 
+class QcrExportRequest(BaseModel):
+    """POST /projects/{id}/export-qcr — latest editing workspace clauses for Excel export."""
+
+    workspace_id: Optional[str] = None
+    clauses: list[dict[str, Any]] = Field(..., min_length=1)
+    sections: list[WorkspaceSectionDescriptor] = Field(default_factory=list)
+    insurers: list[str] = Field(default_factory=list)
+
+
 class QcrEditingWorkspaceResponse(BaseModel):
     """
     GET /projects/{id}/qcr-workspace

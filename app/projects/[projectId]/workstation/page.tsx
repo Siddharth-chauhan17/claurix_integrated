@@ -26,6 +26,8 @@ export default function ProjectWorkstationPage() {
       rfqFileBlob: null,
       quoteFiles: [],
       quoteFileBlobs: {},
+      qcrExport: null,
+      qcrExportBlob: null,
       mappings: [],
       selectedRange: null,
       assignMenu: null,

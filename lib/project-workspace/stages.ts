@@ -15,7 +15,7 @@ export const WORKFLOW_STAGES: WorkflowStageMeta[] = [
   { id: "policy-mapping", label: "Policy Mapping", shortLabel: "Mapping", enabled: true },
   { id: "ai-processing", label: "AI Processing", shortLabel: "AI", enabled: false },
   { id: "review-edit", label: "Review & Edit", shortLabel: "Review", enabled: false },
-  { id: "export-qcr", label: "Export QCR", shortLabel: "Export", enabled: false },
+  { id: "export-qcr", label: "Exported QCR", shortLabel: "QCR", enabled: true },
   { id: "activity", label: "Activity", shortLabel: "Activity", enabled: false },
 ];
 

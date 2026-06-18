@@ -8,6 +8,7 @@ and returns WorkspaceResponse. Auth + project ownership enforced before orchestr
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -15,6 +16,7 @@ from app.deps import get_current_user
 from app.models.user import User
 from app.schemas.qcr_editing import (
     QcrEditingWorkspaceResponse,
+    QcrExportRequest,
     QcrWorkspaceSaveRequest,
     QcrWorkspaceSaveResponse,
 )
@@ -24,6 +26,7 @@ from app.services import (
     gap_analysis_service,
     project_service,
     qcr_editing_service,
+    qcr_export_service,
     qcr_generation_service,
 )
 
@@ -57,6 +60,43 @@ def save_qcr_editing_workspace(
 ) -> QcrWorkspaceSaveResponse:
     project, _ = project_service.get_project_for_user_or_raise(db, project_id, user)
     return qcr_editing_service.save_qcr_editing_workspace(db, project, user, body)
+
+
+@router.post(
+    "/{project_id}/export-qcr",
+    summary="Export QCR editing workspace to multi-sheet Excel (one sheet per policy)",
+)
+def export_qcr_workbook(
+    project_id: str,
+    body: QcrExportRequest,
+    user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+) -> Response:
+    project, _ = project_service.get_project_for_user_or_raise(db, project_id, user)
+
+    try:
+        content = qcr_export_service.export_qcr_workbook(
+            clauses=body.clauses,
+            sections=[s.model_dump() for s in body.sections],
+            insurers=body.insurers,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    safe_name = "".join(
+        ch if ch.isalnum() or ch in ("-", "_", " ") else "_"
+        for ch in (project.name or project_id)
+    ).strip() or project_id
+    filename = f"QCR_{safe_name}.xlsx"
+
+    return Response(
+        content=content,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get(

@@ -20,6 +20,7 @@ const NAV_ITEMS: {
   count?: (state: {
     rfqWorkbook: { fileName: string } | null;
     quoteCount: number;
+    qcrExport: { fileName: string } | null;
   }) => number;
 }[] = [
   {
@@ -43,6 +44,12 @@ const NAV_ITEMS: {
     label: "Uploaded Quotes",
     icon: DocumentsIcon,
     count: ({ quoteCount }) => quoteCount,
+  },
+  {
+    stage: "export-qcr",
+    label: "Exported QCR",
+    icon: DocumentsIcon,
+    count: ({ qcrExport }) => (qcrExport ? 1 : 0),
   },
 ];
 
@@ -108,6 +115,7 @@ export function WorkflowSidebar() {
   const currentStage = useProjectWorkspaceStore((s) => s.currentStage);
   const rfqWorkbook = useProjectWorkspaceStore((s) => s.rfqWorkbook);
   const quoteFiles = useProjectWorkspaceStore((s) => s.quoteFiles);
+  const qcrExport = useProjectWorkspaceStore((s) => s.qcrExport);
   const toggleSidebar = useProjectWorkspaceStore((s) => s.toggleSidebar);
   const setStage = useProjectWorkspaceStore((s) => s.setStage);
 
@@ -177,6 +185,7 @@ export function WorkflowSidebar() {
                     ? count({
                         rfqWorkbook,
                         quoteCount: quoteFiles.length,
+                        qcrExport,
                       })
                     : 0
                 }

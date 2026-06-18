@@ -32,7 +32,6 @@ export function WorkspaceMainPanel() {
   if (
     currentStage === "ai-processing" ||
     currentStage === "review-edit" ||
-    currentStage === "export-qcr" ||
     currentStage === "activity"
   ) {
     return (
@@ -56,6 +55,10 @@ export function WorkspaceMainPanel() {
 
   if (currentStage === "quote-uploads") {
     return <WorkstationDocumentsPanel variant="quotes" />;
+  }
+
+  if (currentStage === "export-qcr") {
+    return <WorkstationDocumentsPanel variant="qcr" />;
   }
 
   const onPolicyMapping =

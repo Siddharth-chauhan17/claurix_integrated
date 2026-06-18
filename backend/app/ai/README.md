@@ -38,10 +38,11 @@ Thin wrapper around the Ollama client. Reads `OLLAMA_BASE_URL` and `AI_MODEL_NAM
 
 ### `gap_analysis/policy_merger.py`
 
-- **Added:** `merge_policy_records(policies: list[dict])` — same index-based merge, but on in-memory dicts.
+- **Added:** `merge_policy_records(policies: list[dict])` — row-keyed merge by `source.excel_row`, on in-memory dicts.
+- **Added:** `build_export_rows(data)` — flat Excel row layout per merged policy; used by `json_to_excel` and QCR export.
 - **Kept:** `merge_policy_files(paths)` — loads JSON files from disk, then calls `merge_policy_records`.
 - **Why:** Claurix merges inside the API after building dicts in memory; it does not require per-insurer JSON on disk first.
-- **Known issue (unchanged from your version):** merge aligns by **list index** — crashes if insurers return different clause counts (`IndexError`). Fix here before production.
+- **Alignment:** merge aligns by **`source.excel_row`** (not list index), so insurers with different clause ordering still merge correctly.
 
 ### `gap_analysis/process_policy.py`
 

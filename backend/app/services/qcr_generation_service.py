@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from datetime import timezone
 
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -131,6 +131,15 @@ def generate_workspace(
         run.completed_at = gap_analysis_service.utcnow()
         db.commit()
         raise
+    except ValueError as exc:
+        run.status = gap_analysis_service.QCR_STATUS_FAILED
+        run.error_message = str(exc)
+        run.completed_at = gap_analysis_service.utcnow()
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
     except Exception as exc:
         run.status = gap_analysis_service.QCR_STATUS_FAILED
         run.error_message = str(exc)

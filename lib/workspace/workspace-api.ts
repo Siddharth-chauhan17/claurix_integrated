@@ -40,10 +40,12 @@ export async function generateQcr(
         body: JSON.stringify(payload),
       }
     );
-  } catch {
-    throw new Error(
-      `Cannot reach API at ${API_BASE_URL}. Is the backend running? (docker compose up -d api)`
-    );
+  } catch (err) {
+    const hint =
+      err instanceof TypeError
+        ? `Cannot reach API at ${API_BASE_URL}. Start the backend: docker compose up -d api`
+        : `Cannot reach API at ${API_BASE_URL}. Is the backend running? (docker compose up -d api)`;
+    throw new Error(hint);
   }
   if (!res.ok) {
     const detail = await parseApiError(res, "Failed to generate QCR workspace");

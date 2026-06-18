@@ -1,7 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { DocumentsIcon, ProjectsIcon } from "@/components/workspace/icons";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useWorkstationUploads } from "@/hooks/useWorkstationUploads";
 import { useProjectWorkspaceStore } from "@/stores/projectWorkspaceStore";
 import { cn } from "@/lib/utils";
@@ -89,6 +91,10 @@ function UploadedFileRow({
   );
 }
 
+type RemoveTarget =
+  | { kind: "rfq" }
+  | { kind: "quote"; id: string; name: string };
+
 export function WorkstationUploadHub() {
   const rfqWorkbook = useProjectWorkspaceStore((s) => s.rfqWorkbook);
   const quoteFiles = useProjectWorkspaceStore((s) => s.quoteFiles);
@@ -112,21 +118,24 @@ export function WorkstationUploadHub() {
   const hasQuotes = quoteFiles.length > 0;
   const canProceed = hasRfq && hasQuotes;
 
-  const handleRemoveRfq = () => {
-    if (
-      !window.confirm(
-        "Remove this RFQ file? Any policy section mappings will also be cleared."
-      )
-    ) {
-      return;
+  const [removeTarget, setRemoveTarget] = useState<RemoveTarget | null>(null);
+
+  const handleConfirmRemove = () => {
+    if (!removeTarget) return;
+    if (removeTarget.kind === "rfq") {
+      clearRfqWorkbook();
+    } else {
+      removeQuoteFile(removeTarget.id);
     }
-    clearRfqWorkbook();
+    setRemoveTarget(null);
   };
 
-  const handleRemoveQuote = (id: string, name: string) => {
-    if (!window.confirm(`Remove "${name}" from this project?`)) return;
-    removeQuoteFile(id);
-  };
+  const removeDialogMessage =
+    removeTarget?.kind === "rfq"
+      ? "Remove this RFQ file? Any policy section mappings will also be cleared."
+      : removeTarget?.kind === "quote"
+        ? `Remove "${removeTarget.name}" from this project?`
+        : "";
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
@@ -194,25 +203,49 @@ export function WorkstationUploadHub() {
         </div>
 
         {(hasRfq || hasQuotes) && (
-          <div className="mt-6 w-full max-w-3xl space-y-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Selected files
-            </p>
-            {hasRfq ? (
-              <UploadedFileRow
-                label="RFQ"
-                fileName={rfqWorkbook!.fileName}
-                onRemove={handleRemoveRfq}
-              />
-            ) : null}
-            {quoteFiles.map((q) => (
-              <UploadedFileRow
-                key={q.id}
-                label="Quote"
-                fileName={q.name}
-                onRemove={() => handleRemoveQuote(q.id, q.name)}
-              />
-            ))}
+          <div className="mt-6 grid w-full max-w-3xl gap-4 sm:grid-cols-2">
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-left">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                RFQ
+              </p>
+              {hasRfq ? (
+                <div className="mt-2">
+                  <UploadedFileRow
+                    label="RFQ"
+                    fileName={rfqWorkbook!.fileName}
+                    onRemove={() => setRemoveTarget({ kind: "rfq" })}
+                  />
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-slate-400">No RFQ uploaded yet.</p>
+              )}
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-left">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Quotes
+              </p>
+              {hasQuotes ? (
+                <div className="mt-2 space-y-2">
+                  {quoteFiles.map((q) => (
+                    <UploadedFileRow
+                      key={q.id}
+                      label="Quote"
+                      fileName={q.name}
+                      onRemove={() =>
+                        setRemoveTarget({
+                          kind: "quote",
+                          id: q.id,
+                          name: q.name,
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-slate-400">No quotes uploaded yet.</p>
+              )}
+            </div>
           </div>
         )}
 
@@ -244,6 +277,17 @@ export function WorkstationUploadHub() {
           ) : null}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={removeTarget !== null}
+        title="Remove file?"
+        message={removeDialogMessage}
+        confirmLabel="Yes, remove"
+        cancelLabel="No"
+        variant="danger"
+        onConfirm={handleConfirmRemove}
+        onCancel={() => setRemoveTarget(null)}
+      />
     </div>
   );
 }

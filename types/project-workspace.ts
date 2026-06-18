@@ -52,6 +52,11 @@ export type QuoteFileRef = {
   serverDocumentId?: string;
 };
 
+export type QcrExportRef = {
+  fileName: string;
+  exportedAt: string;
+};
+
 export type PolicyMapping = {
   id: string;
   sheet_name: string;
@@ -73,4 +78,5 @@ export type PersistedWorkspaceState = {
   quoteFiles: QuoteFileRef[];
   activeSheetName: string | null;
   mappings: PolicyMapping[];
+  qcrExport?: QcrExportRef | null;
 };

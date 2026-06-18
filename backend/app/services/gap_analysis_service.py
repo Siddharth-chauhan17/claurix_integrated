@@ -11,6 +11,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
+import pandas as pd
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -140,6 +141,47 @@ def _persist_artifacts(
         )
 
 
+def resolve_quote_sheet_name(excel_path: str | Path, requested: str) -> str:
+    """
+    Map RFQ sheet names from policy mappings onto quote workbook tabs.
+    Falls back to a single-sheet quote file or case-insensitive / partial name match.
+    """
+    path = Path(excel_path)
+    with pd.ExcelFile(path) as book:
+        names = book.sheet_names
+
+    if not names:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No worksheets found in quote file {path.name!r}.",
+        )
+
+    if requested in names:
+        return requested
+
+    by_lower = {name.lower(): name for name in names}
+    requested_lower = requested.lower()
+    if requested_lower in by_lower:
+        return by_lower[requested_lower]
+
+    if len(names) == 1:
+        return names[0]
+
+    for name in names:
+        name_lower = name.lower()
+        if requested_lower in name_lower or name_lower in requested_lower:
+            return name
+
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=(
+            f"Worksheet {requested!r} not found in quote file {path.name!r}. "
+            f"Available sheets: {', '.join(names)}. "
+            "Use quote Excel files with matching sheet names, or a single-sheet workbook."
+        ),
+    )
+
+
 def run_gap_analysis(
     db: Session,
     project: Project,
@@ -179,9 +221,11 @@ def run_gap_analysis(
             start_row = policy_info["start_row"]
             end_row = policy_info["end_row"]
 
+            resolved_sheet = resolve_quote_sheet_name(file_path, sheet_name)
+
             policy_block = extract_policy_block(
                 file_path,
-                sheet_name,
+                resolved_sheet,
                 start_row,
                 end_row,
             )
@@ -189,7 +233,7 @@ def run_gap_analysis(
             structured = extract_policy_clauses(
                 company_name,
                 policy_name,
-                sheet_name,
+                resolved_sheet,
                 start_row,
                 end_row,
                 policy_block,

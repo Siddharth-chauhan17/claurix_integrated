@@ -1,15 +1,16 @@
 import { create } from "zustand";
+import {
+  deleteRfqBlob,
+  loadRfqBlob,
+  saveRfqBlob,
+} from "@/lib/project-workspace/rfq-blob-storage";
+import { loadQcrExportBlob } from "@/lib/project-workspace/qcr-export-storage";
 import { downloadBlob } from "@/lib/project-workspace/downloadBlob";
 import { policyLineColor } from "@/lib/project-workspace/policyLines";
 import {
   clearRfqBlobMemoryCache,
   registerRfqBlobInMemory,
 } from "@/lib/project-workspace/rfq-blob-access";
-import {
-  deleteRfqBlob,
-  loadRfqBlob,
-  saveRfqBlob,
-} from "@/lib/project-workspace/rfq-blob-storage";
 import {
   loadPersistedWorkspace,
   savePersistedWorkspace,
@@ -28,6 +29,7 @@ import {
 import type {
   PersistedWorkspaceState,
   PolicyMapping,
+  QcrExportRef,
   QuoteFileRef,
   RfqWorkbook,
   RowSelectionRange,
@@ -62,6 +64,9 @@ type ProjectWorkspaceState = {
   quoteFiles: QuoteFileRef[];
   /** Original quote file blobs keyed by quote file id (session-only). */
   quoteFileBlobs: Record<string, Blob>;
+  qcrExport: QcrExportRef | null;
+  /** Latest exported QCR workbook blob (IndexedDB + in-memory when restored). */
+  qcrExportBlob: Blob | null;
   activeSheetName: string | null;
   selectedRange: RowSelectionRange | null;
   mappings: PolicyMapping[];
@@ -97,6 +102,8 @@ type ProjectWorkspaceState = {
   setQuoteServerDocumentId: (quoteFileId: string, documentId: string) => void;
   downloadRfqFile: () => void;
   downloadQuoteFile: (id: string) => void;
+  downloadQcrExport: () => void;
+  restoreQcrExportBlob: (projectId: string) => Promise<void>;
   setActiveSheet: (name: string) => void;
   beginRowSelection: (rowIndex: number) => void;
   beginResizeSelection: (edge: "start" | "end") => void;
@@ -122,6 +129,7 @@ function snapshot(state: ProjectWorkspaceState): PersistedWorkspaceState {
     quoteFiles: state.quoteFiles,
     activeSheetName: state.activeSheetName,
     mappings: state.mappings,
+    qcrExport: state.qcrExport,
   };
 }
 
@@ -164,6 +172,8 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
   rfqFileBlob: null,
   quoteFiles: [],
   quoteFileBlobs: {},
+  qcrExport: null,
+  qcrExportBlob: null,
   activeSheetName: null,
   selectedRange: null,
   mappings: [],
@@ -205,6 +215,8 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
         rfqFileBlob: null,
         quoteFiles: saved.quoteFiles,
         quoteFileBlobs: {},
+        qcrExport: saved.qcrExport ?? null,
+        qcrExportBlob: null,
         activeSheetName: saved.activeSheetName,
         mappings: saved.mappings,
         saveStatus: "saved",
@@ -214,6 +226,23 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
       set({ hydrated: true, currentStage: "document-upload" });
     }
     void get().restoreRfqFileBlob(projectId);
+    void get().restoreQcrExportBlob(projectId);
+  },
+
+  restoreQcrExportBlob: async (projectId) => {
+    try {
+      const stored = await loadQcrExportBlob(projectId);
+      if (!stored?.blob) return;
+      set({
+        qcrExport: {
+          fileName: stored.fileName,
+          exportedAt: stored.exportedAt,
+        },
+        qcrExportBlob: stored.blob,
+      });
+    } catch {
+      /* IndexedDB unavailable */
+    }
   },
 
   restoreRfqFileBlob: async (projectId) => {
@@ -407,6 +436,12 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
     const blob = quoteFileBlobs[id];
     if (!meta || !blob) return;
     downloadBlob(blob, meta.name);
+  },
+
+  downloadQcrExport: () => {
+    const { qcrExport, qcrExportBlob } = get();
+    if (!qcrExport || !qcrExportBlob) return;
+    downloadBlob(qcrExportBlob, qcrExport.fileName);
   },
 
   setActiveSheet: (name) => {

@@ -326,6 +326,33 @@ export async function saveQcrEditingWorkspace(
   return res.json() as Promise<QcrWorkspaceSaveApiResponse>;
 }
 
+export type QcrExportApiRequest = {
+  workspace_id?: string;
+  clauses: Array<Record<string, unknown>>;
+  sections: { id: string; label: string }[];
+  insurers: string[];
+};
+
+/** POST /projects/{id}/export-qcr — multi-sheet Excel (one sheet per policy). */
+export async function exportQcrWorkbook(
+  projectId: string,
+  body: QcrExportApiRequest
+): Promise<Blob> {
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/export-qcr`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to export QCR workbook"));
+  }
+  return res.blob();
+}
+
 export async function uploadProjectQuotes(
   projectId: string,
   files: File[]

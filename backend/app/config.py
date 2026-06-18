@@ -56,6 +56,9 @@ class Settings(BaseSettings):
     # Project document uploads (RFQ / quote files for gap analysis)
     uploads_dir: str = "uploads"
 
+    # Comma-separated emails allowed to GET /demo-requests (empty = no access)
+    demo_request_admin_emails: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

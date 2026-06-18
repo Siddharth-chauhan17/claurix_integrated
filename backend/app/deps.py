@@ -6,6 +6,7 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.database import get_db
 from app.models.user import User
 from app.services import auth_service
@@ -58,5 +59,28 @@ def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
+        )
+    return user
+
+
+def _demo_request_admin_email_set() -> set[str]:
+    raw = get_settings().demo_request_admin_emails
+    return {email.strip().lower() for email in raw.split(",") if email.strip()}
+
+
+def require_demo_request_admin(
+    user: Annotated[User, Depends(get_current_user)],
+) -> User:
+    """Authenticated user whose email is listed in DEMO_REQUEST_ADMIN_EMAILS."""
+    allowed = _demo_request_admin_email_set()
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Demo request admin access is not configured",
+        )
+    if user.email.strip().lower() not in allowed:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to view demo requests",
         )
     return user

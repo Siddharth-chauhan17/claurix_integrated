@@ -143,7 +143,7 @@ def root() -> dict[str, str]:
 
         "clients": "POST /clients, GET /clients, GET /clients/{id}",
 
-        "demo_requests": "POST /demo-requests, GET /demo-requests",
+        "demo_requests": "POST /demo-requests (public), GET /demo-requests (admin)",
 
     }
 

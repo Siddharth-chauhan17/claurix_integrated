@@ -1,9 +1,13 @@
 """Public demo request API."""
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.deps import require_demo_request_admin
+from app.models.user import User
 from app.schemas import (
     DemoRequestCreate,
     DemoRequestListResponse,
@@ -41,13 +45,14 @@ def create_demo_request(
 @router.get(
     "",
     response_model=DemoRequestListResponse,
-    summary="List recent demo requests (internal MVP visibility)",
+    summary="List recent demo requests (admin only)",
 )
 def list_demo_requests(
+    _admin: Annotated[User, Depends(require_demo_request_admin)],
     limit: int = Query(default=50, ge=1, le=100),
     db: Session = Depends(get_db),
 ) -> DemoRequestListResponse:
-    """Return the latest demo requests for lightweight internal lead visibility."""
+    """Return the latest demo requests for configured admin emails only."""
     rows = demo_request_service.list_demo_requests(db, limit=limit)
     items = [DemoRequestSummary.model_validate(row) for row in rows]
     return DemoRequestListResponse(count=len(items), items=items)

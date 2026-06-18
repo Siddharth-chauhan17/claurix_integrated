@@ -31,6 +31,7 @@ services:
       AI_ENABLED: ${AI_ENABLED:-false}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       AI_MODEL_NAME: ${AI_MODEL_NAME:-qwen2.5:7b}
+      DEMO_REQUEST_ADMIN_EMAILS: ${DEMO_REQUEST_ADMIN_EMAILS:-}
     ports:
       - "8000:8000"
     depends_on:

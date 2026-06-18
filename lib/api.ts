@@ -502,14 +502,17 @@ export async function submitDemoRequest(
 }
 
 /**
- * GET /demo-requests — internal MVP lead visibility.
+ * GET /demo-requests — admin-only lead list (requires session + allowlisted email).
  */
 export async function listDemoRequests(
   limit = 50
 ): Promise<DemoRequestListResponse> {
-  const res = await fetch(`${API_BASE_URL}/demo-requests?limit=${limit}`);
+  const res = await fetch(`${API_BASE_URL}/demo-requests?limit=${limit}`, {
+    credentials: "include",
+    cache: "no-store",
+  });
   if (!res.ok) {
-    throw new Error("Failed to fetch demo requests");
+    throw new Error(await parseApiError(res, "Failed to fetch demo requests"));
   }
   return res.json() as Promise<DemoRequestListResponse>;
 }

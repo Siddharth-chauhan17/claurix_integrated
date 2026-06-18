@@ -1,0 +1,20 @@
+---
+description: Default GitHub remote for commits and pushes in this repo
+alwaysApply: true
+---
+
+# Git push target
+
+This workspace is the **Claurix integrated** snapshot. When the user asks to push to GitHub (or "push changes"), use **`claurix_integrated`**, not `origin`.
+
+| Remote | Repo | When to use |
+|--------|------|-------------|
+| **`claurix_integrated`** | `Siddharth-chauhan17/claurix_integrated` | **Default** — all normal pushes |
+| `origin` | `Siddharth-chauhan17/insurify` | Only if the user explicitly asks for insurify |
+
+## Commands
+
+- After commit: `git push claurix_integrated main` (or `git push` — `main` tracks `claurix_integrated/main`)
+- Push insurify only when requested: `git push origin main`
+
+Branch `main` upstream is `claurix_integrated/main`.

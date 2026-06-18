@@ -16,8 +16,26 @@ export function WorkstationDocumentsPanel({ variant }: WorkstationDocumentsPanel
   const quoteFileBlobs = useProjectWorkspaceStore((s) => s.quoteFileBlobs);
   const downloadRfqFile = useProjectWorkspaceStore((s) => s.downloadRfqFile);
   const downloadQuoteFile = useProjectWorkspaceStore((s) => s.downloadQuoteFile);
+  const clearRfqWorkbook = useProjectWorkspaceStore((s) => s.clearRfqWorkbook);
+  const removeQuoteFile = useProjectWorkspaceStore((s) => s.removeQuoteFile);
 
   const isRfq = variant === "rfq";
+
+  const handleRemoveRfq = () => {
+    if (
+      !window.confirm(
+        "Remove this RFQ file? Any policy section mappings will also be cleared."
+      )
+    ) {
+      return;
+    }
+    clearRfqWorkbook();
+  };
+
+  const handleRemoveQuote = (id: string, name: string) => {
+    if (!window.confirm(`Remove "${name}" from this project?`)) return;
+    removeQuoteFile(id);
+  };
 
   return (
     <div className="h-full overflow-y-auto p-6 sm:p-8">
@@ -39,6 +57,7 @@ export function WorkstationDocumentsPanel({ variant }: WorkstationDocumentsPanel
                 uploadedAt={rfqWorkbook.uploadedAt}
                 canDownload={Boolean(rfqFileBlob)}
                 onDownload={downloadRfqFile}
+                onRemove={handleRemoveRfq}
               />
             </div>
           ) : (
@@ -56,6 +75,7 @@ export function WorkstationDocumentsPanel({ variant }: WorkstationDocumentsPanel
                 uploadedAt={file.uploadedAt}
                 canDownload={Boolean(quoteFileBlobs[file.id])}
                 onDownload={() => downloadQuoteFile(file.id)}
+                onRemove={() => handleRemoveQuote(file.id, file.name)}
               />
             ))}
           </div>

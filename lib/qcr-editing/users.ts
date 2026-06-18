@@ -9,7 +9,7 @@ export type WorkspaceUser = {
   email?: string;
 };
 
-/** Demo / org users referenced by mock activity history. */
+/** Fallback demo users for name resolution when auth user is not registered yet. */
 export const WORKSPACE_USERS: WorkspaceUser[] = [
   { id: "usr_rahul_sharma", name: "Rahul Sharma", email: "rahul.sharma@claurix.ai" },
   { id: "usr_priya_mehta", name: "Priya Mehta", email: "priya.mehta@claurix.ai" },

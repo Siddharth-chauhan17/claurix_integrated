@@ -3,19 +3,12 @@
 import type { GridApi } from "ag-grid-community";
 import { useCallback, useEffect, useState } from "react";
 import {
-  getSelectionClientBounds,
-  getSelectionOverlayFromApi,
+  getSelectionOverlayLayout,
+  type SelectionOverlayLayout,
 } from "@/lib/workspace-interaction/gridSelectionBounds";
 import { normalizeRange } from "@/lib/workspace-interaction/rowRangeSelection";
 import { cn } from "@/lib/utils";
 import { useProjectWorkspaceStore } from "@/stores/projectWorkspaceStore";
-
-type FixedBounds = {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-};
 
 type Props = {
   containerRef: React.RefObject<HTMLElement | null>;
@@ -28,40 +21,23 @@ export function SelectionRegionOverlay({ containerRef, gridApiRef }: Props) {
   const assignMenu = useProjectWorkspaceStore((s) => s.assignMenu);
   const beginResizeSelection = useProjectWorkspaceStore((s) => s.beginResizeSelection);
 
-  const [bounds, setBounds] = useState<FixedBounds | null>(null);
+  const [layout, setLayout] = useState<SelectionOverlayLayout | null>(null);
 
   const paint = useCallback(() => {
     const range = useProjectWorkspaceStore.getState().selectedRange;
     const container = containerRef.current;
     const api = gridApiRef.current;
     if (!range || !container) {
-      setBounds(null);
+      setLayout(null);
       return;
     }
 
-    const client = getSelectionClientBounds(container, range);
-    if (client) {
-      setBounds({
-        top: client.top,
-        left: client.left,
-        width: client.width,
-        height: client.height,
-      });
-      return;
-    }
-
-    const fromApi = api ? getSelectionOverlayFromApi(api, range, container) : null;
-    if (fromApi) {
-      setBounds(fromApi);
-      return;
-    }
-
-    setBounds(null);
+    setLayout(getSelectionOverlayLayout(container, range, api));
   }, [containerRef, gridApiRef]);
 
   useEffect(() => {
     if (!selectedRange) {
-      setBounds(null);
+      setLayout(null);
       return;
     }
 
@@ -77,50 +53,63 @@ export function SelectionRegionOverlay({ containerRef, gridApiRef }: Props) {
     }
 
     const container = containerRef.current;
-    const viewport = container?.querySelector(".ag-body-viewport");
-    viewport?.addEventListener("scroll", paint, { passive: true });
+    const viewports = container?.querySelectorAll(".ag-body-viewport");
+    viewports?.forEach((vp) => {
+      vp.addEventListener("scroll", paint, { passive: true });
+    });
     window.addEventListener("resize", paint);
 
     return () => {
       cancelAnimationFrame(raf);
-      viewport?.removeEventListener("scroll", paint);
+      viewports?.forEach((vp) => {
+        vp.removeEventListener("scroll", paint);
+      });
       window.removeEventListener("resize", paint);
     };
   }, [selectedRange, isSelecting, paint, containerRef]);
 
-  if (!selectedRange || !bounds) return null;
+  if (!selectedRange || !layout) return null;
 
   const range = normalizeRange(selectedRange.start, selectedRange.end);
   const showHandles = !isSelecting && !assignMenu;
 
   return (
-    <div
-      className="pw-selection-region pointer-events-none"
-      style={{
-        position: "fixed",
-        top: bounds.top,
-        left: bounds.left,
-        width: bounds.width,
-        height: bounds.height,
-        zIndex: 25,
-      }}
-      aria-hidden={false}
-    >
+    <>
       <div
-        className={cn(
-          "pw-selection-band__fill h-full w-full",
-          isSelecting && "pw-selection-band__fill--dragging"
-        )}
-      />
-      <div className="pw-selection-band__accent" />
-      <div className="pw-selection-band__edge pw-selection-band__edge--top" />
-      <div className="pw-selection-band__edge pw-selection-band__edge--bottom" />
-
-      {showHandles ? (
-        <>
+        className="pw-selection-region pointer-events-none"
+        style={{
+          position: "fixed",
+          top: layout.top,
+          left: layout.left,
+          width: layout.width,
+          height: layout.height,
+          zIndex: 25,
+        }}
+        aria-hidden={false}
+      >
+        <div
+          className={cn(
+            "pw-selection-band__fill h-full w-full",
+            isSelecting && "pw-selection-band__fill--dragging"
+          )}
+        />
+        <div className="pw-selection-band__accent" />
+        <div className="pw-selection-band__edge pw-selection-band__edge--top" />
+        <div className="pw-selection-band__edge pw-selection-band__edge--bottom" />
+        {showHandles ? (
+          <div className="pw-selection-label pointer-events-none">
+            Rows {range.start}–{range.end}
+          </div>
+        ) : null}
+      </div>
+      {showHandles && layout.showTopHandle ? (
           <button
             type="button"
-            className="pw-selection-handle pw-selection-handle--top pointer-events-auto"
+            className="pw-selection-handle pw-selection-handle--fixed pointer-events-auto"
+            style={{
+              top: layout.selectionTop - 5,
+              left: layout.handleCenterX,
+            }}
             aria-label="Adjust top boundary"
             onPointerDown={(e) => {
               e.preventDefault();
@@ -128,9 +117,15 @@ export function SelectionRegionOverlay({ containerRef, gridApiRef }: Props) {
               beginResizeSelection("start");
             }}
           />
+        ) : null}
+        {showHandles && layout.showBottomHandle ? (
           <button
             type="button"
-            className="pw-selection-handle pw-selection-handle--bottom pointer-events-auto"
+            className="pw-selection-handle pw-selection-handle--fixed pointer-events-auto"
+            style={{
+              top: layout.selectionBottom - 5,
+              left: layout.handleCenterX,
+            }}
             aria-label="Adjust bottom boundary"
             onPointerDown={(e) => {
               e.preventDefault();
@@ -138,11 +133,7 @@ export function SelectionRegionOverlay({ containerRef, gridApiRef }: Props) {
               beginResizeSelection("end");
             }}
           />
-          <div className="pw-selection-label pointer-events-none">
-            Rows {range.start}–{range.end}
-          </div>
-        </>
-      ) : null}
-    </div>
+        ) : null}
+    </>
   );
 }

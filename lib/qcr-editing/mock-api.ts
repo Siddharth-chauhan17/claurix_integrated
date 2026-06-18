@@ -9,9 +9,12 @@ import {
 } from "@/lib/api";
 import { useProjectWorkspaceStore } from "@/stores/projectWorkspaceStore";
 import { alignWorkspaceSourcesWithRfq } from "./align-source-with-rfq";
-import { AI_MOCK_CLAUSE_RESPONSE_WITH_SOURCE } from "./ai-mock-response";
 import { hydrateWorkstationForQcr } from "./hydrate-workstation";
 import { buildQcrWorkspaceFromAiResponse } from "./normalize-ai-response";
+import {
+  isQcrGenerationCurrent,
+  loadQcrGenerationContext,
+} from "@/lib/workspace/qcr-generation-context";
 import type { AiClauseComparisonRaw } from "./ai-mock-response";
 import type {
   ClauseComparison,
@@ -168,8 +171,29 @@ export async function fetchQcrWorkspace(
   await delay(LATENCY_MS);
   await hydrateWorkstationForQcr(projectId);
 
+  const ws = useProjectWorkspaceStore.getState();
+  const generationContext = loadQcrGenerationContext(projectId);
+  const generationIsCurrent = isQcrGenerationCurrent(
+    projectId,
+    ws.rfqWorkbook,
+    ws.mappings
+  );
+
+  if (!generationIsCurrent) {
+    throw new Error(
+      generationContext
+        ? "QCR results are outdated. Map policy sections on the new RFQ and generate QCR again from the workstation."
+        : "No QCR has been generated yet. Map policy sections and generate QCR from the workstation."
+    );
+  }
+
   const fromApi = await loadEditingWorkspaceFromBackend(projectId);
-  const rawClauses = fromApi?.raw ?? AI_MOCK_CLAUSE_RESPONSE_WITH_SOURCE;
+  const rawClauses = fromApi?.raw;
+  if (!rawClauses?.length) {
+    throw new Error(
+      "No QCR results found for the current RFQ and mappings. Generate QCR from the workstation."
+    );
+  }
 
   const workspace = buildWorkspace(projectId, rawClauses, {
     projectName: options?.projectName,

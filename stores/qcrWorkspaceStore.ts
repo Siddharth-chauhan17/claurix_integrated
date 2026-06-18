@@ -5,6 +5,10 @@
 
 import { create } from "zustand";
 import { buildWorkspacePayload } from "@/lib/workspace/buildWorkspacePayload";
+import {
+  mappingFingerprint,
+  saveQcrGenerationContext,
+} from "@/lib/workspace/qcr-generation-context";
 import { saveWorkspaceToSession } from "@/lib/workspace/session";
 import { generateQcr } from "@/lib/workspace/workspace-api";
 import type { WorkspacePayload, WorkspaceResponse } from "@/types/workspace";
@@ -46,6 +50,15 @@ export const useQcrWorkspaceStore = create<QcrWorkspaceState>((set) => ({
       });
       const response = await generateQcr(projectId, payload);
       saveWorkspaceToSession(projectId, response);
+      if (ws.rfqWorkbook) {
+        saveQcrGenerationContext(projectId, {
+          rfqUploadedAt: ws.rfqWorkbook.uploadedAt,
+          rfqFileName: ws.rfqWorkbook.fileName,
+          mappingFingerprint: mappingFingerprint(ws.mappings),
+          workspaceId: response.workspace_id,
+          generatedAt: response.generated_at,
+        });
+      }
       set({ payload, response, isGenerating: false });
       return response;
     } catch (e) {

@@ -72,15 +72,10 @@ body {
   background: #e2e8f0;
 }
 
-.pw-grid .ag-header-cell.pw-col-header .ag-header-cell-label {
-  white-space: pre-line;
-  line-height: 1.25;
-  padding-top: 4px;
-  padding-bottom: 4px;
-}
-
 .pw-grid .ag-header-cell.pw-col-header .ag-header-cell-text {
   font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 
 .pw-grid .pw-data-col {
@@ -226,7 +221,6 @@ body {
 
 .pw-selection-handle {
   position: absolute;
-  left: 50%;
   z-index: 2;
   height: 10px;
   width: 48px;
@@ -236,6 +230,11 @@ body {
   background: white;
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.15);
   cursor: ns-resize;
+}
+
+.pw-selection-handle--fixed {
+  position: fixed;
+  z-index: 26;
 }
 
 .pw-selection-handle--top {

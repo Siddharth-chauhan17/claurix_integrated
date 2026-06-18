@@ -25,6 +25,7 @@ type DocumentFileCardProps = {
   uploadedAt: string;
   canDownload: boolean;
   onDownload: () => void;
+  onRemove?: () => void;
   compact?: boolean;
 };
 
@@ -33,6 +34,7 @@ export function DocumentFileCard({
   uploadedAt,
   canDownload,
   onDownload,
+  onRemove,
   compact = false,
 }: DocumentFileCardProps) {
   return (
@@ -65,25 +67,56 @@ export function DocumentFileCard({
             ) : null}
           </p>
         </div>
+        {onRemove ? (
+          <button
+            type="button"
+            onClick={onRemove}
+            title={`Remove ${fileName}`}
+            aria-label={`Remove ${fileName}`}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+              aria-hidden
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        ) : null}
       </div>
-      <button
-        type="button"
-        onClick={onDownload}
-        disabled={!canDownload}
-        title={
-          canDownload
-            ? `Download ${fileName}`
-            : "Re-upload this file in this session to enable download"
-        }
-        className={cn(
-          "mt-2.5 w-full rounded-md border text-center text-xs font-semibold transition",
-          canDownload
-            ? "border-slate-200 bg-white text-slate-700 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
-            : "cursor-not-allowed border-slate-100 bg-slate-100 text-slate-400"
-        )}
-      >
-        Download
-      </button>
+      <div className={cn("flex gap-2", compact ? "mt-2" : "mt-2.5")}>
+        <button
+          type="button"
+          onClick={onDownload}
+          disabled={!canDownload}
+          title={
+            canDownload
+              ? `Download ${fileName}`
+              : "Re-upload this file in this session to enable download"
+          }
+          className={cn(
+            "flex-1 rounded-md border text-center text-xs font-semibold transition",
+            canDownload
+              ? "border-slate-200 bg-white text-slate-700 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
+              : "cursor-not-allowed border-slate-100 bg-slate-100 text-slate-400"
+          )}
+        >
+          Download
+        </button>
+        {onRemove ? (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-red-600 transition hover:border-red-200 hover:bg-red-50"
+          >
+            Remove
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

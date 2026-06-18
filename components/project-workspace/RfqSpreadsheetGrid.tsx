@@ -40,7 +40,7 @@ function columnMinWidth(meta: SheetColumnMeta): number {
 }
 
 function columnHeaderName(meta: SheetColumnMeta): string {
-  return `${meta.letter}\n${meta.label}`;
+  return meta.letter;
 }
 
 export function RfqSpreadsheetGrid() {
@@ -327,7 +327,7 @@ export function RfqSpreadsheetGrid() {
             getRowId={(p) => String(p.data._rowIndex)}
             getRowClass={getRowClass}
             getRowStyle={getRowStyle}
-            headerHeight={48}
+            headerHeight={36}
             suppressRowClickSelection
             suppressCellFocus
             enableCellTextSelection

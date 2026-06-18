@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { projectQcrWorkspacePath } from "@/lib/projectWorkstation";
-import { loadWorkspaceFromSession } from "@/lib/workspace/session";
+import {
+  isQcrGenerationCurrent,
+  loadQcrGenerationContext,
+} from "@/lib/workspace/qcr-generation-context";
 import { cn } from "@/lib/utils";
 import { useProjectWorkspaceStore } from "@/stores/projectWorkspaceStore";
 import { useQcrWorkspaceStore } from "@/stores/qcrWorkspaceStore";
@@ -12,30 +15,25 @@ import { useQcrWorkspaceStore } from "@/stores/qcrWorkspaceStore";
 export function GenerateQcrButton() {
   const router = useRouter();
   const projectId = useProjectWorkspaceStore((s) => s.projectId);
+  const rfqWorkbook = useProjectWorkspaceStore((s) => s.rfqWorkbook);
   const mappings = useProjectWorkspaceStore((s) => s.mappings);
   const isGenerating = useQcrWorkspaceStore((s) => s.isGenerating);
-  const response = useQcrWorkspaceStore((s) => s.response);
+  const clearQcrStore = useQcrWorkspaceStore((s) => s.clear);
   const generateFromWorkstation = useQcrWorkspaceStore((s) => s.generateFromWorkstation);
 
-  const [hasStoredWorkspace, setHasStoredWorkspace] = useState(false);
-
-  useEffect(() => {
-    if (!projectId) {
-      setHasStoredWorkspace(false);
-      return;
-    }
-    const inMemory = response?.project_id === projectId;
-    const inSession = Boolean(loadWorkspaceFromSession(projectId));
-    const next = inMemory || inSession;
-    setHasStoredWorkspace((prev) => (prev === next ? prev : next));
-  }, [projectId, response?.project_id]);
-
   const hasMappings = mappings.length > 0;
-  const qcrAlreadyGenerated = hasStoredWorkspace;
+  const qcrIsCurrent = projectId
+    ? isQcrGenerationCurrent(projectId, rfqWorkbook, mappings)
+    : false;
   const disabled = !projectId || !hasMappings || isGenerating;
 
+  useEffect(() => {
+    if (!projectId || qcrIsCurrent) return;
+    clearQcrStore();
+  }, [projectId, qcrIsCurrent, clearQcrStore]);
+
   const handleClick = async () => {
-    if (!projectId || disabled || qcrAlreadyGenerated) return;
+    if (!projectId || disabled || qcrIsCurrent) return;
     try {
       await generateFromWorkstation(projectId);
       router.push(projectQcrWorkspacePath(projectId));
@@ -46,7 +44,7 @@ export function GenerateQcrButton() {
 
   if (!projectId) return null;
 
-  if (qcrAlreadyGenerated) {
+  if (qcrIsCurrent && loadQcrGenerationContext(projectId)) {
     return (
       <Link
         href={projectQcrWorkspacePath(projectId)}

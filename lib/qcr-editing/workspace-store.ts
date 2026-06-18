@@ -12,7 +12,6 @@
 import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 import { useProjectWorkspaceStore } from "@/stores/projectWorkspaceStore";
-import { generateMockActivityEvents } from "./activity-mock-data";
 import { useActivityStore } from "./activity-store";
 import { logClauseBrokerRemark, logInsurerPatch } from "./activity-logging";
 import { fetchQcrWorkspace, saveQcrWorkspace } from "./mock-api";
@@ -224,9 +223,7 @@ export const useQcrEditingStore = create<QcrEditingStore>((set, get) => ({
       const visibleInsurers = Object.fromEntries(
         workspace.insurers.map((i) => [i, true])
       );
-      useActivityStore
-        .getState()
-        .initProject(projectId, generateMockActivityEvents(projectId));
+      useActivityStore.getState().initProject(projectId);
 
       set({
         workspace,

@@ -1,8 +1,12 @@
 import { create } from "zustand";
 import { downloadBlob } from "@/lib/project-workspace/downloadBlob";
 import { policyLineColor } from "@/lib/project-workspace/policyLines";
-import { registerRfqBlobInMemory } from "@/lib/project-workspace/rfq-blob-access";
 import {
+  clearRfqBlobMemoryCache,
+  registerRfqBlobInMemory,
+} from "@/lib/project-workspace/rfq-blob-access";
+import {
+  deleteRfqBlob,
   loadRfqBlob,
   saveRfqBlob,
 } from "@/lib/project-workspace/rfq-blob-storage";
@@ -10,6 +14,7 @@ import {
   loadPersistedWorkspace,
   savePersistedWorkspace,
 } from "@/lib/project-workspace/storage";
+import { invalidateQcrGeneration } from "@/lib/workspace/qcr-generation-context";
 import { clearClauseSourceValueCache } from "@/lib/qcr-editing/excel-source-lookup";
 import {
   selectionConflictsWithMappings,
@@ -85,8 +90,10 @@ type ProjectWorkspaceState = {
   proceedToPolicyMapping: () => boolean;
   toggleSidebar: () => void;
   setRfqWorkbook: (workbook: RfqWorkbook, sourceFile: File) => void;
+  clearRfqWorkbook: () => void;
   setRfqServerDocumentId: (documentId: string) => void;
   addQuoteFiles: (files: File[]) => void;
+  removeQuoteFile: (id: string) => void;
   setQuoteServerDocumentId: (quoteFileId: string, documentId: string) => void;
   downloadRfqFile: () => void;
   downloadQuoteFile: (id: string) => void;
@@ -116,6 +123,13 @@ function snapshot(state: ProjectWorkspaceState): PersistedWorkspaceState {
     activeSheetName: state.activeSheetName,
     mappings: state.mappings,
   };
+}
+
+function invalidateQcrIfProjectReady(get: () => ProjectWorkspaceState): void {
+  const { projectId } = get();
+  if (projectId) {
+    invalidateQcrGeneration(projectId);
+  }
 }
 
 export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get) => {
@@ -260,12 +274,20 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
   setRfqWorkbook: (workbook, sourceFile) => {
     const firstSheet = workbook.sheets[0]?.name ?? null;
     const projectId = get().projectId;
+    if (projectId) {
+      invalidateQcrGeneration(projectId);
+    }
     set({
       rfqWorkbook: workbook,
       rfqFileBlob: sourceFile,
       activeSheetName: firstSheet,
       currentStage: "document-upload",
+      mappings: [],
+      activeMappingId: null,
+      selectedRange: null,
+      assignMenu: null,
       saveStatus: "unsaved",
+      selectionNotice: null,
     });
     if (projectId) {
       registerRfqBlobInMemory(projectId, sourceFile);
@@ -274,6 +296,44 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
         /* non-fatal; in-memory blob still available this session */
       });
     }
+    get().persist();
+  },
+
+  clearRfqWorkbook: () => {
+    const { projectId, mappings } = get();
+    const hadMappings = mappings.length > 0;
+
+    if (projectId) {
+      invalidateQcrGeneration(projectId);
+    }
+
+    set({
+      rfqWorkbook: null,
+      rfqFileBlob: null,
+      activeSheetName: null,
+      selectedRange: null,
+      mappings: [],
+      activeMappingId: null,
+      assignMenu: null,
+      hoveredMappingId: null,
+      isSelecting: false,
+      selectionAnchor: null,
+      currentStage: "document-upload",
+      saveStatus: "unsaved",
+      selectionNotice: hadMappings
+        ? "RFQ removed — policy section mappings were cleared."
+        : null,
+    });
+
+    if (projectId) {
+      registerRfqBlobInMemory(projectId, null);
+      clearRfqBlobMemoryCache(projectId);
+      clearClauseSourceValueCache();
+      void deleteRfqBlob(projectId).catch(() => {
+        /* non-fatal */
+      });
+    }
+
     get().persist();
   },
 
@@ -302,6 +362,24 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
         quoteFiles: [...s.quoteFiles, ...additions],
         quoteFileBlobs,
         saveStatus: "unsaved" as const,
+      };
+    });
+    get().persist();
+  },
+
+  removeQuoteFile: (id) => {
+    set((s) => {
+      const quoteFiles = s.quoteFiles.filter((q) => q.id !== id);
+      const quoteFileBlobs = { ...s.quoteFileBlobs };
+      delete quoteFileBlobs[id];
+      return {
+        quoteFiles,
+        quoteFileBlobs,
+        saveStatus: "unsaved" as const,
+        selectionNotice:
+          quoteFiles.length === 0
+            ? "All quote files removed — upload at least one quote to continue."
+            : null,
       };
     });
     get().persist();
@@ -560,6 +638,7 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
       });
     }
     get().persist();
+    invalidateQcrIfProjectReady(get);
   },
 
   confirmMappingRange: () => {
@@ -599,6 +678,7 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
       saveStatus: "unsaved",
     });
     get().persist();
+    invalidateQcrIfProjectReady(get);
   },
 
   removeMapping: (id) => {
@@ -610,6 +690,7 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
       saveStatus: "unsaved",
     }));
     get().persist();
+    invalidateQcrIfProjectReady(get);
   },
 
   openMappingEditor: (mappingId) => {

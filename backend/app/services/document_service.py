@@ -127,6 +127,10 @@ async def save_project_document(
 
     if document_type == DOCUMENT_TYPE_RFQ and replace_existing_rfq:
         existing = list_documents_for_project(db, project, DOCUMENT_TYPE_RFQ)
+        if existing:
+            from app.services import qcr_generation_service
+
+            qcr_generation_service.invalidate_project_qcr_results(db, project.id)
         _remove_documents(db, existing)
 
     safe_name = _safe_filename(filename)

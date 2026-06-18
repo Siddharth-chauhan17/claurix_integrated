@@ -59,6 +59,36 @@ function UploadZoneCard({
   );
 }
 
+function UploadedFileRow({
+  label,
+  fileName,
+  onRemove,
+}: {
+  label: string;
+  fileName: string;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2">
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+          {label}
+        </p>
+        <p className="truncate text-sm font-medium text-slate-800" title={fileName}>
+          {fileName}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="shrink-0 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-red-600 transition hover:border-red-200 hover:bg-red-50"
+      >
+        Remove
+      </button>
+    </div>
+  );
+}
+
 export function WorkstationUploadHub() {
   const rfqWorkbook = useProjectWorkspaceStore((s) => s.rfqWorkbook);
   const quoteFiles = useProjectWorkspaceStore((s) => s.quoteFiles);
@@ -66,6 +96,8 @@ export function WorkstationUploadHub() {
   const proceedToPolicyMapping = useProjectWorkspaceStore(
     (s) => s.proceedToPolicyMapping
   );
+  const clearRfqWorkbook = useProjectWorkspaceStore((s) => s.clearRfqWorkbook);
+  const removeQuoteFile = useProjectWorkspaceStore((s) => s.removeQuoteFile);
 
   const {
     rfqInputRef,
@@ -79,6 +111,22 @@ export function WorkstationUploadHub() {
   const hasRfq = Boolean(rfqWorkbook);
   const hasQuotes = quoteFiles.length > 0;
   const canProceed = hasRfq && hasQuotes;
+
+  const handleRemoveRfq = () => {
+    if (
+      !window.confirm(
+        "Remove this RFQ file? Any policy section mappings will also be cleared."
+      )
+    ) {
+      return;
+    }
+    clearRfqWorkbook();
+  };
+
+  const handleRemoveQuote = (id: string, name: string) => {
+    if (!window.confirm(`Remove "${name}" from this project?`)) return;
+    removeQuoteFile(id);
+  };
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
@@ -146,19 +194,25 @@ export function WorkstationUploadHub() {
         </div>
 
         {(hasRfq || hasQuotes) && (
-          <div className="mt-6 w-full max-w-3xl rounded-xl border border-slate-200 bg-white px-4 py-3 text-left text-sm text-slate-600">
+          <div className="mt-6 w-full max-w-3xl space-y-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Selected files
+            </p>
             {hasRfq ? (
-              <p>
-                <span className="font-medium text-slate-800">RFQ:</span>{" "}
-                {rfqWorkbook!.fileName}
-              </p>
+              <UploadedFileRow
+                label="RFQ"
+                fileName={rfqWorkbook!.fileName}
+                onRemove={handleRemoveRfq}
+              />
             ) : null}
-            {hasQuotes ? (
-              <p className={hasRfq ? "mt-1" : undefined}>
-                <span className="font-medium text-slate-800">Quotes:</span>{" "}
-                {quoteFiles.map((q) => q.name).join(", ")}
-              </p>
-            ) : null}
+            {quoteFiles.map((q) => (
+              <UploadedFileRow
+                key={q.id}
+                label="Quote"
+                fileName={q.name}
+                onRemove={() => handleRemoveQuote(q.id, q.name)}
+              />
+            ))}
           </div>
         )}
 

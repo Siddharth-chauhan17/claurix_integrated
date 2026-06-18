@@ -60,7 +60,7 @@ def get_qcr_editing_workspace(
     project: Project,
 ) -> QcrEditingWorkspaceResponse:
     settings = get_settings()
-    run = qcr_generation_service.get_generation_status(db, project.id)
+    run = qcr_generation_service.get_current_generation_status(db, project)
     rfq_name = _rfq_file_name(db, project)
     broker_edit = _get_broker_edit(db, project.id)
 

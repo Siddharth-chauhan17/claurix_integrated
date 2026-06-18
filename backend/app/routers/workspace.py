@@ -69,8 +69,8 @@ def get_generate_qcr_status(
     user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
 ) -> QcrGenerationStatusResponse:
-    project_service.get_project_for_user_or_raise(db, project_id, user)
-    run = qcr_generation_service.get_generation_status(db, project_id)
+    project, _ = project_service.get_project_for_user_or_raise(db, project_id, user)
+    run = qcr_generation_service.get_current_generation_status(db, project)
     if run is None:
         return QcrGenerationStatusResponse(
             project_id=project_id,

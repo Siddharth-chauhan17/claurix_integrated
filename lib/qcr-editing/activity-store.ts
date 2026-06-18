@@ -16,7 +16,7 @@ type ActivityStoreState = {
   currentUserId: string | null;
 
   setCurrentUserId: (userId: string | null) => void;
-  initProject: (projectId: string, seedEvents?: ActivityEvent[]) => void;
+  initProject: (projectId: string) => void;
   appendEvent: (event: ActivityEvent) => void;
   getProjectEvents: (projectId: string) => readonly ActivityEvent[];
   reset: () => void;
@@ -34,6 +34,14 @@ function loadPersistedEvents(projectId: string): ActivityEvent[] | null {
   }
 }
 
+function isMockActivityEvent(event: ActivityEvent): boolean {
+  return event.id.startsWith("evt_mock_");
+}
+
+function filterRealEvents(events: readonly ActivityEvent[]): ActivityEvent[] {
+  return events.filter((event) => !isMockActivityEvent(event));
+}
+
 function persistEvents(projectId: string, events: readonly ActivityEvent[]): void {
   if (typeof window === "undefined") return;
   sessionStorage.setItem(activitySessionKey(projectId), JSON.stringify(events));
@@ -45,17 +53,28 @@ export const useActivityStore = create<ActivityStoreState>((set, get) => ({
 
   setCurrentUserId: (userId) => set({ currentUserId: userId }),
 
-  initProject: (projectId, seedEvents) => {
+  initProject: (projectId) => {
     const existing = get().eventsByProject[projectId];
-    if (existing && existing.length > 0) return;
+    if (existing && existing.length > 0) {
+      const realOnly = filterRealEvents(existing);
+      if (realOnly.length !== existing.length) {
+        persistEvents(projectId, realOnly);
+        set((s) => ({
+          eventsByProject: {
+            ...s.eventsByProject,
+            [projectId]: Object.freeze([...realOnly]) as readonly ActivityEvent[],
+          },
+        }));
+      }
+      return;
+    }
 
     const persisted = loadPersistedEvents(projectId);
-    const initial =
-      persisted && persisted.length > 0
-        ? persisted
-        : seedEvents && seedEvents.length > 0
-          ? seedEvents
-          : [];
+    const initial = filterRealEvents(persisted ?? []);
+
+    if (persisted?.some(isMockActivityEvent)) {
+      persistEvents(projectId, initial);
+    }
 
     if (initial.length === 0) return;
 

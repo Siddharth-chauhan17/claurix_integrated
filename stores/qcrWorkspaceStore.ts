@@ -9,6 +9,7 @@ import {
   mappingFingerprint,
   saveQcrGenerationContext,
 } from "@/lib/workspace/qcr-generation-context";
+import { validateWorkstationForQcrGeneration } from "@/lib/workspace/validate-generation";
 import { saveWorkspaceToSession } from "@/lib/workspace/session";
 import { generateQcr } from "@/lib/workspace/workspace-api";
 import type { WorkspacePayload, WorkspaceResponse } from "@/types/workspace";
@@ -40,6 +41,16 @@ export const useQcrWorkspaceStore = create<QcrWorkspaceState>((set) => ({
 
     set({ isGenerating: true, error: null });
     try {
+      const validationError = validateWorkstationForQcrGeneration(
+        ws.rfqWorkbook,
+        ws.quoteFiles,
+        ws.mappings
+      );
+      if (validationError) {
+        set({ isGenerating: false, error: validationError });
+        throw new Error(validationError);
+      }
+
       const payload = buildWorkspacePayload({
         projectId,
         projectName: ws.projectName,

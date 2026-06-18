@@ -11,17 +11,23 @@ async function syncRfqToServer(projectId: string, file: File) {
   useProjectWorkspaceStore.getState().setRfqServerDocumentId(document.id);
 }
 
-async function syncQuotesToServer(projectId: string, files: File[]) {
-  const before = useProjectWorkspaceStore.getState().quoteFiles.length;
+async function syncQuotesToServer(
+  projectId: string,
+  files: File[],
+  quoteCountBefore: number
+): Promise<number> {
   const { items } = await uploadProjectQuotes(projectId, files);
   const quoteFiles = useProjectWorkspaceStore.getState().quoteFiles;
-  const newRefs = quoteFiles.slice(before);
+  const newRefs = quoteFiles.slice(quoteCountBefore);
+  let linked = 0;
   items.forEach((doc, index) => {
     const ref = newRefs[index];
     if (ref) {
       useProjectWorkspaceStore.getState().setQuoteServerDocumentId(ref.id, doc.id);
+      linked += 1;
     }
   });
+  return linked;
 }
 
 export function useWorkstationUploads() {
@@ -72,10 +78,18 @@ export function useWorkstationUploads() {
         alert("Upload Excel (.xlsx, .xls) or PDF files.");
         return;
       }
+      const quoteCountBefore = useProjectWorkspaceStore.getState().quoteFiles.length;
       addQuoteFiles(valid);
       if (projectId) {
         try {
-          await syncQuotesToServer(projectId, valid);
+          const linked = await syncQuotesToServer(projectId, valid, quoteCountBefore);
+          if (linked > 0) {
+            toast.success(
+              linked === 1
+                ? "Quote uploaded to server."
+                : `${linked} quotes uploaded to server.`
+            );
+          }
         } catch (err) {
           toast.warn(
             err instanceof Error

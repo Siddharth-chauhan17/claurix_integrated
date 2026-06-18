@@ -16,6 +16,10 @@ import {
   savePersistedWorkspace,
 } from "@/lib/project-workspace/storage";
 import { invalidateQcrGeneration } from "@/lib/workspace/qcr-generation-context";
+import {
+  reconcileQuoteServerDocumentIds,
+  reconcileRfqServerDocumentId,
+} from "@/lib/workspace/reconcile-server-documents";
 import { clearClauseSourceValueCache } from "@/lib/qcr-editing/excel-source-lookup";
 import {
   selectionConflictsWithMappings,
@@ -88,6 +92,7 @@ type ProjectWorkspaceState = {
     clientId: string;
   }) => void;
   hydrate: (projectId: string) => void;
+  reconcileServerDocuments: (projectId: string) => Promise<void>;
   /** Reload RFQ binary from IndexedDB after refresh/navigation (Source verification). */
   restoreRfqFileBlob: (projectId: string) => Promise<void>;
   persist: () => void;
@@ -227,6 +232,25 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
     }
     void get().restoreRfqFileBlob(projectId);
     void get().restoreQcrExportBlob(projectId);
+    void get().reconcileServerDocuments(projectId);
+  },
+
+  reconcileServerDocuments: async (projectId) => {
+    const { rfqWorkbook } = get();
+    try {
+      await reconcileRfqServerDocumentId(
+        projectId,
+        rfqWorkbook,
+        get().setRfqServerDocumentId
+      );
+      await reconcileQuoteServerDocumentIds(
+        projectId,
+        get().quoteFiles,
+        get().setQuoteServerDocumentId
+      );
+    } catch {
+      /* Server unavailable — upload flow will surface errors */
+    }
   },
 
   restoreQcrExportBlob: async (projectId) => {

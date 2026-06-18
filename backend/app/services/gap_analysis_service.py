@@ -61,27 +61,26 @@ def _clause_id(policy: str, excel_row: int, clause_text: str) -> str:
 
 
 def policy_config_from_payload(payload: WorkspacePayload) -> list[dict]:
-    """Map workstation selected_sections → model policy_config."""
+    """Map workstation selected_sections → model policy_config (one entry per section + sheet)."""
     configs: list[dict] = []
     for section in payload.selected_sections:
-        sheet_name: str | None = None
-        row_ranges: list[tuple[int, int]] = []
+        by_sheet: dict[str, list[tuple[int, int]]] = {}
         for mapping in section.source_mappings:
             loc = mapping.source_reference.location
-            if loc.sheet_name:
-                sheet_name = loc.sheet_name
-            if loc.row_start and loc.row_end:
-                row_ranges.append((loc.row_start, loc.row_end))
-        if not sheet_name or not row_ranges:
-            continue
-        configs.append(
-            {
-                "policy": section.section_name,
-                "sheet_name": sheet_name,
-                "start_row": min(r[0] for r in row_ranges),
-                "end_row": max(r[1] for r in row_ranges),
-            }
-        )
+            if not loc.sheet_name or not loc.row_start or not loc.row_end:
+                continue
+            by_sheet.setdefault(loc.sheet_name, []).append(
+                (loc.row_start, loc.row_end)
+            )
+        for sheet_name, row_ranges in by_sheet.items():
+            configs.append(
+                {
+                    "policy": section.section_name,
+                    "sheet_name": sheet_name,
+                    "start_row": min(r[0] for r in row_ranges),
+                    "end_row": max(r[1] for r in row_ranges),
+                }
+            )
     return configs
 
 
@@ -141,10 +140,42 @@ def _persist_artifacts(
         )
 
 
-def resolve_quote_sheet_name(excel_path: str | Path, requested: str) -> str:
+def _pick_sheet_name(names: list[str], *candidates: str | None) -> str | None:
+    """Resolve a workbook tab from one or more candidate names (exact, case, partial)."""
+    if not names:
+        return None
+
+    by_lower = {name.lower(): name for name in names}
+
+    for candidate in candidates:
+        if not candidate or not str(candidate).strip():
+            continue
+        text = str(candidate).strip()
+        if text in names:
+            return text
+        key = text.lower()
+        if key in by_lower:
+            return by_lower[key]
+        for name in names:
+            name_lower = name.lower()
+            if key in name_lower or name_lower in key:
+                return name
+
+    if len(names) == 1:
+        return names[0]
+
+    return None
+
+
+def resolve_quote_sheet_name(
+    excel_path: str | Path,
+    requested: str,
+    *,
+    policy_name: str | None = None,
+) -> str:
     """
     Map RFQ sheet names from policy mappings onto quote workbook tabs.
-    Falls back to a single-sheet quote file or case-insensitive / partial name match.
+    Falls back to policy section name, single-sheet workbooks, and fuzzy name match.
     """
     path = Path(excel_path)
     with pd.ExcelFile(path) as book:
@@ -156,28 +187,17 @@ def resolve_quote_sheet_name(excel_path: str | Path, requested: str) -> str:
             detail=f"No worksheets found in quote file {path.name!r}.",
         )
 
-    if requested in names:
-        return requested
-
-    by_lower = {name.lower(): name for name in names}
-    requested_lower = requested.lower()
-    if requested_lower in by_lower:
-        return by_lower[requested_lower]
-
-    if len(names) == 1:
-        return names[0]
-
-    for name in names:
-        name_lower = name.lower()
-        if requested_lower in name_lower or name_lower in requested_lower:
-            return name
+    picked = _pick_sheet_name(names, requested, policy_name)
+    if picked:
+        return picked
 
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
         detail=(
             f"Worksheet {requested!r} not found in quote file {path.name!r}. "
             f"Available sheets: {', '.join(names)}. "
-            "Use quote Excel files with matching sheet names, or a single-sheet workbook."
+            "Map policies on the correct RFQ tab, or use quote files whose tabs match "
+            "your policy section names (e.g. Employee Benefits, Fire)."
         ),
     )
 
@@ -221,7 +241,11 @@ def run_gap_analysis(
             start_row = policy_info["start_row"]
             end_row = policy_info["end_row"]
 
-            resolved_sheet = resolve_quote_sheet_name(file_path, sheet_name)
+            resolved_sheet = resolve_quote_sheet_name(
+                file_path,
+                sheet_name,
+                policy_name=policy_name,
+            )
 
             policy_block = extract_policy_block(
                 file_path,

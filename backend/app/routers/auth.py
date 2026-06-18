@@ -18,7 +18,6 @@ from app.schemas import (
     LoginResponse,
     SignupRequest,
     SignupResponse,
-    Token,
     UserResponse,
 )
 from app.services import auth_service
@@ -36,6 +35,26 @@ def user_to_response(user) -> UserResponse:
     return UserResponse.model_validate(user)
 
 
+def _session_response(
+    content: dict,
+    access_token: str,
+    *,
+    status_code: int = status.HTTP_200_OK,
+) -> JSONResponse:
+    """JSON body for the client; JWT only in HttpOnly cookie (not in response body)."""
+    response = JSONResponse(content=content, status_code=status_code)
+    response.set_cookie(
+        key=ACCESS_TOKEN_COOKIE,
+        value=access_token,
+        max_age=ACCESS_TOKEN_MAX_AGE,
+        path="/",
+        httponly=True,
+        samesite="lax",
+        secure=False,
+    )
+    return response
+
+
 @router.post(
     "/signup",
     response_model=SignupResponse,
@@ -48,7 +67,7 @@ def signup(
 ) -> SignupResponse:
     """
     Register a new user with name, email, and password.
-    Returns the created user and a JWT access token.
+    Sets session via HttpOnly cookie; does not return JWT in the response body.
     """
     try:
         user = auth_service.create_user(db, payload)
@@ -63,30 +82,15 @@ def signup(
             detail=str(e),
         ) from e
 
-    access_token, expires_in = auth_service.create_access_token(user.id)
-    token = Token(
-        access_token=access_token,
-        token_type="bearer",
-        expires_in=expires_in,
-    )
-    response = JSONResponse(
-        content=SignupResponse(
+    access_token, _expires_in = auth_service.create_access_token(user.id)
+    return _session_response(
+        SignupResponse(
             user=user_to_response(user),
-            token=token,
             message="Account created successfully",
         ).model_dump(mode="json"),
+        access_token,
         status_code=status.HTTP_201_CREATED,
     )
-    response.set_cookie(
-        key=ACCESS_TOKEN_COOKIE,
-        value=access_token,
-        max_age=ACCESS_TOKEN_MAX_AGE,
-        path="/",
-        httponly=True,
-        samesite="lax",
-        secure=False,
-    )
-    return response
 
 
 @router.post(
@@ -100,7 +104,7 @@ def login(
 ) -> LoginResponse:
     """
     Authenticate with email and password.
-    Returns the user and a JWT access token.
+    Sets session via HttpOnly cookie; does not return JWT in the response body.
     """
     user = auth_service.authenticate_user(db, payload.email, payload.password)
     if user is None:
@@ -109,28 +113,11 @@ def login(
             detail="Invalid email or password",
         )
 
-    access_token, expires_in = auth_service.create_access_token(user.id)
-    token = Token(
-        access_token=access_token,
-        token_type="bearer",
-        expires_in=expires_in,
+    access_token, _expires_in = auth_service.create_access_token(user.id)
+    return _session_response(
+        LoginResponse(user=user_to_response(user)).model_dump(mode="json"),
+        access_token,
     )
-    response = JSONResponse(
-        content=LoginResponse(
-            user=user_to_response(user),
-            token=token,
-        ).model_dump(mode="json"),
-    )
-    response.set_cookie(
-        key=ACCESS_TOKEN_COOKIE,
-        value=access_token,
-        max_age=ACCESS_TOKEN_MAX_AGE,
-        path="/",
-        httponly=True,
-        samesite="lax",
-        secure=False,
-    )
-    return response
 
 
 @router.get(

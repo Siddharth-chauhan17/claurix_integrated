@@ -37,14 +37,6 @@ class LoginRequest(BaseModel):
 # ----- Responses -----
 
 
-class Token(BaseModel):
-    """JWT token returned on login/signup."""
-
-    access_token: str = Field(..., description="JWT bearer token")
-    token_type: str = Field(default="bearer", description="Token type")
-    expires_in: int = Field(..., description="Seconds until token expiry")
-
-
 class UserResponse(BaseModel):
     """User data in API responses (no password)."""
 
@@ -58,6 +50,19 @@ class UserResponse(BaseModel):
     google_id: Optional[str] = None
 
     model_config = {"from_attributes": True}
+
+
+class SignupResponse(BaseModel):
+    """Response for POST /auth/signup. Session JWT is set only via HttpOnly cookie."""
+
+    user: UserResponse
+    message: str = Field(default="Account created successfully")
+
+
+class LoginResponse(BaseModel):
+    """Response for POST /auth/login. Session JWT is set only via HttpOnly cookie."""
+
+    user: UserResponse
 
 
 # ----- Clients -----
@@ -134,21 +139,6 @@ class ProjectListResponse(BaseModel):
 
     count: int
     items: list[ProjectResponse]
-
-
-class SignupResponse(BaseModel):
-    """Response for POST /auth/signup."""
-
-    user: UserResponse
-    token: Token
-    message: str = Field(default="Account created successfully")
-
-
-class LoginResponse(BaseModel):
-    """Response for POST /auth/login."""
-
-    user: UserResponse
-    token: Token
 
 
 # ----- Demo request -----

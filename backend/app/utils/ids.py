@@ -8,6 +8,7 @@ CLIENT_PREFIX = "clt_"
 PROJECT_PREFIX = "prj_"
 DOCUMENT_PREFIX = "doc_"
 QCR_RUN_PREFIX = "qcr_"
+OUTLOOK_CONNECTION_PREFIX = "olk_"
 
 # Stable testing org (only exception to random org IDs)
 PERSONAL_ORG_ID = "org_personal"
@@ -40,6 +41,10 @@ def new_document_id() -> str:
 
 def new_qcr_run_id() -> str:
     return new_id(QCR_RUN_PREFIX)
+
+
+def new_outlook_connection_id() -> str:
+    return new_id(OUTLOOK_CONNECTION_PREFIX)
 
 
 def is_valid_user_id(value: object) -> bool:

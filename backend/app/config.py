@@ -59,6 +59,17 @@ class Settings(BaseSettings):
     # Comma-separated emails allowed to GET /demo-requests (empty = no access)
     demo_request_admin_emails: str = ""
 
+    # Microsoft / Outlook integration (optional; mailbox OAuth separate from Claurix login)
+    microsoft_client_id: Optional[str] = None
+    microsoft_client_secret: Optional[str] = None
+    microsoft_tenant_id: str = "common"
+    microsoft_redirect_uri: str = (
+        "http://localhost:8000/integrations/outlook/callback"
+    )
+
+    # Frontend base URL for OAuth redirects (Outlook callback success/error)
+    frontend_base_url: str = "http://localhost:3000"
+
 
 @lru_cache
 def get_settings() -> Settings:

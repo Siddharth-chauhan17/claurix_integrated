@@ -6,14 +6,15 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Application code
+# Application code and Alembic
 COPY app ./app
 COPY scripts ./scripts
+COPY alembic ./alembic
+COPY alembic.ini .
 
-# Ensure init_db can be run as module from /app
 ENV PYTHONPATH=/app
 
-# entrypoint runs init_db then uvicorn (Python avoids Windows CRLF issues)
+# Migrations then uvicorn (Python entrypoint avoids Windows CRLF issues)
 COPY entrypoint.py /entrypoint.py
 EXPOSE 8000
 ENTRYPOINT ["python", "/entrypoint.py"]

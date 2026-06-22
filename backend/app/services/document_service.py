@@ -171,6 +171,73 @@ async def save_project_document(
     return document
 
 
+def save_project_document_from_bytes(
+    db: Session,
+    project: Project,
+    user: User,
+    *,
+    filename: str,
+    content: bytes,
+    document_type: str,
+    replace_existing_rfq: bool = False,
+) -> ProjectDocument:
+    """Persist uploaded bytes using the same rules as multipart file uploads."""
+    if document_type not in VALID_DOCUMENT_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="document_type must be rfq or quote",
+        )
+    if not content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Attachment content is empty",
+        )
+
+    _validate_extension(filename, document_type)
+
+    if document_type == DOCUMENT_TYPE_RFQ and replace_existing_rfq:
+        existing = list_documents_for_project(db, project, DOCUMENT_TYPE_RFQ)
+        if existing:
+            from app.services import qcr_generation_service
+
+            qcr_generation_service.invalidate_project_qcr_results(db, project.id)
+        _remove_documents(db, existing)
+
+    safe_name = _safe_filename(filename)
+    timestamp = utcnow().strftime("%Y%m%d_%H%M%S")
+    stored_name = f"{timestamp}_{safe_name}"
+    dest_dir = _project_upload_dir(
+        project.organization_id,
+        project.id,
+        document_type,
+    )
+    dest_path = dest_dir / stored_name
+
+    try:
+        dest_path.write_bytes(content)
+    except OSError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to store uploaded file",
+        ) from exc
+
+    now = utcnow()
+    document = ProjectDocument(
+        id=new_document_id(),
+        project_id=project.id,
+        organization_id=project.organization_id,
+        document_type=document_type,
+        original_filename=filename,
+        storage_path=str(dest_path.resolve()),
+        uploaded_by=user.id,
+        created_at=now,
+    )
+    db.add(document)
+    db.commit()
+    db.refresh(document)
+    return document
+
+
 async def save_quote_documents(
     db: Session,
     project: Project,

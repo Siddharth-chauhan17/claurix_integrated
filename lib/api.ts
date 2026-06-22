@@ -14,6 +14,163 @@ export function getGoogleOAuthUrl(): string {
   return getAuthUrl("/google");
 }
 
+/** Full-page redirect URL to start Outlook mailbox OAuth (backend → Microsoft). */
+export function getOutlookConnectUrl(): string {
+  return `${API_BASE_URL}/integrations/outlook/connect`;
+}
+
+export type OutlookStatusKind = "ok" | "not_connected" | "reconnect_required";
+
+export type OutlookStatusResponse = {
+  connected: boolean;
+  email: string | null;
+  is_active: boolean;
+  expires_at: string | null;
+  granted_scopes: string | null;
+  last_sync_at: string | null;
+  status: OutlookStatusKind;
+};
+
+export type OutlookDisconnectResponse = {
+  status: "disconnected";
+  message: string;
+};
+
+export async function getOutlookStatus(): Promise<OutlookStatusResponse> {
+  const res = await fetch(`${API_BASE_URL}/integrations/outlook/status`, {
+    credentials: "include",
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to load Outlook status"));
+  }
+  return res.json() as Promise<OutlookStatusResponse>;
+}
+
+export async function disconnectOutlook(): Promise<OutlookDisconnectResponse> {
+  const res = await fetch(`${API_BASE_URL}/integrations/outlook/disconnect`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to disconnect Outlook"));
+  }
+  return res.json() as Promise<OutlookDisconnectResponse>;
+}
+
+export type RelatedEmailSummary = {
+  message_id: string;
+  subject: string;
+  sender_name: string | null;
+  sender_email: string | null;
+  received_at: string | null;
+  has_attachments: boolean;
+  conversation_id: string | null;
+};
+
+export type RelatedEmailListResponse = {
+  messages: RelatedEmailSummary[];
+};
+
+export type MailMessageDetail = {
+  id: string;
+  subject: string;
+  sender_name: string | null;
+  sender_email: string | null;
+  received_at: string | null;
+  body_preview: string | null;
+  has_attachments: boolean;
+  conversation_id: string | null;
+};
+
+export type MailAttachmentSummary = {
+  id: string;
+  name: string;
+  content_type: string | null;
+  size_bytes: number | null;
+  is_inline: boolean;
+  extension: string | null;
+  imported: boolean;
+  document_id: string | null;
+  document_type: "rfq" | "quote" | null;
+};
+
+export type MailAttachmentListResponse = {
+  message_id: string;
+  attachments: MailAttachmentSummary[];
+};
+
+export type OutlookImportAttachmentPayload = {
+  message_id: string;
+  attachment_id: string;
+  document_type: "rfq" | "quote";
+};
+
+export type OutlookImportAttachmentResponse = {
+  status: "imported";
+  document_id: string;
+  file_name: string;
+  document_type: "rfq" | "quote";
+};
+
+export async function getProjectRelatedEmails(
+  projectId: string
+): Promise<RelatedEmailListResponse> {
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/related-emails`,
+    { credentials: "include", cache: "no-store" }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to load related emails"));
+  }
+  return res.json() as Promise<RelatedEmailListResponse>;
+}
+
+export async function getMailMessage(messageId: string): Promise<MailMessageDetail> {
+  const res = await fetch(
+    `${API_BASE_URL}/mail/messages/${encodeURIComponent(messageId)}`,
+    { credentials: "include", cache: "no-store" }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to load email"));
+  }
+  return res.json() as Promise<MailMessageDetail>;
+}
+
+export async function getMailMessageAttachments(
+  messageId: string,
+  projectId: string
+): Promise<MailAttachmentListResponse> {
+  const params = new URLSearchParams({ project_id: projectId });
+  const res = await fetch(
+    `${API_BASE_URL}/mail/messages/${encodeURIComponent(messageId)}/attachments?${params.toString()}`,
+    { credentials: "include", cache: "no-store" }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to load attachments"));
+  }
+  return res.json() as Promise<MailAttachmentListResponse>;
+}
+
+export async function importOutlookAttachment(
+  projectId: string,
+  payload: OutlookImportAttachmentPayload
+): Promise<OutlookImportAttachmentResponse> {
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/mail/import-attachment`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to import attachment"));
+  }
+  return res.json() as Promise<OutlookImportAttachmentResponse>;
+}
+
 /** User shape returned by GET /auth/me (matches backend UserResponse). */
 export interface User {
   id: string;

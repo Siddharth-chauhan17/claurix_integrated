@@ -5,6 +5,7 @@ export type WorkflowStageId =
   | "workstation"
   | "rfq-upload"
   | "quote-uploads"
+  | "related-emails"
   | "policy-mapping"
   | "ai-processing"
   | "review-edit"

@@ -33,6 +33,8 @@ export default function ProjectWorkstationPage() {
       assignMenu: null,
       hydrated: false,
       currentStage: "document-upload",
+      relatedEmailsCount: 0,
+      relatedEmailsDetailMessageId: null,
     });
   };
 

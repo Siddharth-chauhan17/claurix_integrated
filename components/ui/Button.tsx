@@ -1,6 +1,13 @@
 import Link from "next/link";
 
-type ButtonVariant = "primary" | "primary3d" | "primaryFlat" | "outline" | "secondary" | "ghost";
+type ButtonVariant =
+  | "primary"
+  | "primary3d"
+  | "primaryFlat"
+  | "danger3d"
+  | "outline"
+  | "secondary"
+  | "ghost";
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -9,6 +16,7 @@ interface ButtonProps {
   className?: string;
   type?: "button" | "submit";
   disabled?: boolean;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
@@ -18,6 +26,8 @@ const variantStyles: Record<ButtonVariant, string> = {
     "rounded-xl bg-gradient-to-b from-primary-400 to-primary-600 text-white font-semibold border border-primary-500/30 shadow-[0_5px_0_0_#15803d,0_8px_20px_rgba(22,163,74,0.35)] hover:from-primary-500 hover:to-primary-700 hover:shadow-[0_5px_0_0_#166534,0_10px_24px_rgba(22,163,74,0.4)] active:translate-y-[4px] active:shadow-[0_1px_0_0_#15803d,0_2px_8px_rgba(22,163,74,0.25)] transition-all duration-150",
   primaryFlat:
     "bg-primary-500 text-white border border-primary-600 hover:bg-primary-600 transition-colors shadow-none",
+  danger3d:
+    "rounded-xl bg-gradient-to-b from-red-400 to-red-600 text-white font-semibold border border-red-500/30 shadow-[0_5px_0_0_#b91c1c,0_8px_20px_rgba(220,38,38,0.35)] hover:from-red-500 hover:to-red-700 hover:shadow-[0_5px_0_0_#991b1b,0_10px_24px_rgba(220,38,38,0.4)] active:translate-y-[4px] active:shadow-[0_1px_0_0_#b91c1c,0_2px_8px_rgba(220,38,38,0.25)] focus:ring-red-500 transition-all duration-150",
   outline:
     "bg-white text-slate-700 border border-slate-300 hover:border-slate-400 hover:bg-slate-50 transition-colors shadow-none",
   secondary:
@@ -32,6 +42,7 @@ export function Button({
   className = "",
   type = "button",
   disabled = false,
+  onClick,
 }: ButtonProps) {
   const base =
     "inline-flex items-center justify-center rounded-lg px-5 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none";
@@ -47,7 +58,7 @@ export function Button({
   }
 
   return (
-    <button type={type} className={styles} disabled={disabled}>
+    <button type={type} className={styles} disabled={disabled} onClick={onClick}>
       {children}
     </button>
   );

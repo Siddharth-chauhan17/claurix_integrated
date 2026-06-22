@@ -9,9 +9,10 @@ import { ChevronDownIcon, PlusIcon, SearchIcon } from "./icons";
 
 interface WorkspaceTopBarProps {
   title?: string;
-  searchQuery: string;
-  onSearchChange: (value: string) => void;
-  onNewClient: () => void;
+  searchQuery?: string;
+  onSearchChange?: (value: string) => void;
+  onNewClient?: () => void;
+  hideWorkspaceActions?: boolean;
 }
 
 function getInitials(name: string): string {
@@ -24,9 +25,10 @@ function getInitials(name: string): string {
 
 export function WorkspaceTopBar({
   title,
-  searchQuery,
+  searchQuery = "",
   onSearchChange,
   onNewClient,
+  hideWorkspaceActions = false,
 }: WorkspaceTopBarProps) {
   const { user, signOut } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -65,26 +67,30 @@ export function WorkspaceTopBar({
       </div>
 
       <div className="flex flex-1 items-center justify-end gap-3">
-        <div className="relative max-w-sm flex-1 min-w-[8rem]">
-          <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search clients..."
-            className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-            aria-label="Search clients"
-          />
-        </div>
+        {!hideWorkspaceActions ? (
+          <>
+            <div className="relative max-w-sm flex-1 min-w-[8rem]">
+              <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => onSearchChange?.(e.target.value)}
+                placeholder="Search clients..."
+                className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                aria-label="Search clients"
+              />
+            </div>
 
-        <button
-          type="button"
-          onClick={onNewClient}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary-600 px-3.5 text-sm font-medium text-white transition hover:bg-primary-700"
-        >
-          <PlusIcon className="h-4 w-4" />
-          <span className="hidden sm:inline">New Client</span>
-        </button>
+            <button
+              type="button"
+              onClick={onNewClient}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary-600 px-3.5 text-sm font-medium text-white transition hover:bg-primary-700"
+            >
+              <PlusIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">New Client</span>
+            </button>
+          </>
+        ) : null}
 
         {user ? (
           <div className="relative" ref={dropdownRef}>

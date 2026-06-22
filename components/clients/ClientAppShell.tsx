@@ -11,7 +11,7 @@ interface ClientAppShellProps {
 export function ClientAppShell({ children }: ClientAppShellProps) {
   return (
     <div className="flex h-screen overflow-hidden bg-[#f7f8f9]">
-      <WorkspaceSidebar activeSection="projects" />
+      <WorkspaceSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 shrink-0 items-center border-b border-slate-200 bg-white px-6">
           <Link

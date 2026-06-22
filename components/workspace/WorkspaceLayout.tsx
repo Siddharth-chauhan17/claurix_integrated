@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { WORKSPACE_REFRESH_FLAG } from "@/lib/workspaceRefresh";
 import { WorkspaceHome } from "./WorkspaceHome";
-import { WorkspaceSidebar } from "./WorkspaceSidebar";
+import { WorkspaceShell } from "./WorkspaceShell";
 import { WorkspaceTopBar } from "./WorkspaceTopBar";
 
 export function WorkspaceLayout() {
@@ -19,24 +19,21 @@ export function WorkspaceLayout() {
   }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f7f8f9]">
-      <WorkspaceSidebar activeSection="projects" />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <WorkspaceTopBar
+    <WorkspaceShell>
+      <WorkspaceTopBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onNewClient={() => setModalOpen(true)}
+      />
+      <main className="flex-1 overflow-y-auto">
+        <WorkspaceHome
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
           onNewClient={() => setModalOpen(true)}
+          modalOpen={modalOpen}
+          onModalClose={() => setModalOpen(false)}
+          refreshKey={refreshKey}
         />
-        <main className="flex-1 overflow-y-auto">
-          <WorkspaceHome
-            searchQuery={searchQuery}
-            onNewClient={() => setModalOpen(true)}
-            modalOpen={modalOpen}
-            onModalClose={() => setModalOpen(false)}
-            refreshKey={refreshKey}
-          />
-        </main>
-      </div>
-    </div>
+      </main>
+    </WorkspaceShell>
   );
 }

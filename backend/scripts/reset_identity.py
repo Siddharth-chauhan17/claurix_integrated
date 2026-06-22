@@ -1,5 +1,6 @@
 """Pre-production identity reset: wipe users/orgs/clients and re-seed."""
 
+import logging
 import sys
 from pathlib import Path
 
@@ -13,9 +14,18 @@ from app.models.organization import Organization  # noqa: F401
 from app.models.user import User  # noqa: F401
 from app.services.org_assignment_service import get_or_create_personal_organization
 
+logger = logging.getLogger("claurix.startup")
+
+_RESET_IDENTITY_BANNER = (
+    "*** RESET_IDENTITY_ON_STARTUP=true — WIPING ALL USERS, ORGS, AND CLIENTS ***"
+)
+
 
 def wipe_identity_data() -> None:
     """Remove all users, organizations, and clients (pre-production reset)."""
+    for _ in range(3):
+        logger.warning(_RESET_IDENTITY_BANNER)
+
     inspector = inspect(engine)
     tables = set(inspector.get_table_names())
     with engine.begin() as conn:
@@ -25,7 +35,7 @@ def wipe_identity_data() -> None:
             conn.execute(text("TRUNCATE TABLE users RESTART IDENTITY CASCADE"))
         if "organizations" in tables:
             conn.execute(text("TRUNCATE TABLE organizations RESTART IDENTITY CASCADE"))
-    print("Identity data wiped (users, organizations, clients).")
+    logger.warning("Identity data wiped (users, organizations, clients).")
 
 
 def seed_personal_organization() -> None:
@@ -33,7 +43,7 @@ def seed_personal_organization() -> None:
     try:
         get_or_create_personal_organization(db)
         db.commit()
-        print("Personal testing organization (org_personal) ready.")
+        logger.info("Personal testing organization (org_personal) ready.")
     finally:
         db.close()
 

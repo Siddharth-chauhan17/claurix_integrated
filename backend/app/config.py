@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     # App
     app_name: str = "claurix API"
     debug: bool = False
-    # Set RESET_IDENTITY_ON_STARTUP=true to wipe users/orgs/clients on startup (pre-prod only)
+    # NEVER enable in pilot/production — wipes users, orgs, and clients on every startup
     reset_identity_on_startup: bool = False
 
     # Database
@@ -69,6 +69,15 @@ class Settings(BaseSettings):
 
     # Frontend base URL for OAuth redirects (Outlook callback success/error)
     frontend_base_url: str = "http://localhost:3000"
+
+    # Outlook import safety (Outlook imports only; manual uploads unchanged)
+    outlook_max_import_size_mb: int = 25
+
+    # OAuth state cookie Secure flag; None = auto (True when redirect URI is https)
+    outlook_oauth_cookie_secure: Optional[bool] = None
+
+    # Fernet key for encrypting Outlook OAuth tokens at rest (v1:... in DB)
+    outlook_token_encryption_key: Optional[str] = None
 
 
 @lru_cache

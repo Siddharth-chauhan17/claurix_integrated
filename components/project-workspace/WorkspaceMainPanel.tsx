@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { QcrGenerationPanel } from "@/components/project-workspace/QcrGenerationPanel";
 import { WorkstationDocumentsPanel } from "@/components/project-workspace/WorkstationDocumentsPanel";
+import { RelatedEmailsPanel } from "@/components/project-workspace/RelatedEmailsPanel";
 import { WorkstationUploadHub } from "@/components/project-workspace/WorkstationUploadHub";
 import { useProjectWorkspaceStore } from "@/stores/projectWorkspaceStore";
 import { useQcrWorkspaceStore } from "@/stores/qcrWorkspaceStore";
@@ -55,6 +56,10 @@ export function WorkspaceMainPanel() {
 
   if (currentStage === "quote-uploads") {
     return <WorkstationDocumentsPanel variant="quotes" />;
+  }
+
+  if (currentStage === "related-emails") {
+    return <RelatedEmailsPanel />;
   }
 
   if (currentStage === "export-qcr") {

@@ -170,3 +170,11 @@ def validate_oauth_state_cookie(state: str, cookie_nonce: str | None) -> dict[st
     if not cookie_nonce or not secrets.compare_digest(cookie_nonce, parsed["nonce"]):
         raise OutlookOAuthError("OAuth state cookie mismatch")
     return parsed
+
+
+def resolve_oauth_cookie_secure() -> bool:
+    """True when OAuth state cookie should use Secure flag (HTTPS deployments)."""
+    settings = get_settings()
+    if settings.outlook_oauth_cookie_secure is not None:
+        return settings.outlook_oauth_cookie_secure
+    return settings.microsoft_redirect_uri.strip().lower().startswith("https://")

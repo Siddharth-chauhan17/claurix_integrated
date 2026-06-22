@@ -31,14 +31,24 @@ const navItems: {
   { id: "comparisons", label: "Comparisons", href: "/workspace", icon: ComparisonsIcon },
   { id: "exports", label: "Exports", href: "/workspace", icon: ExportsIcon },
   { id: "activity", label: "Activity", href: "/workspace", icon: ActivityIcon },
-  { id: "settings", label: "Settings", href: "/workspace", icon: SettingsIcon },
+  { id: "settings", label: "Settings", href: "/workspace/settings", icon: SettingsIcon },
 ];
 
-interface WorkspaceSidebarProps {
-  activeSection?: WorkspaceSection;
+function isNavItemActive(id: WorkspaceSection, pathname: string): boolean {
+  if (id === "settings") {
+    return pathname === "/workspace/settings" || pathname.startsWith("/workspace/settings/");
+  }
+  if (id === "projects") {
+    return (
+      pathname === "/workspace" ||
+      pathname.startsWith("/clients/") ||
+      pathname.startsWith("/projects/")
+    );
+  }
+  return false;
 }
 
-export function WorkspaceSidebar({ activeSection }: WorkspaceSidebarProps) {
+export function WorkspaceSidebar() {
   const pathname = usePathname();
 
   return (
@@ -53,12 +63,7 @@ export function WorkspaceSidebar({ activeSection }: WorkspaceSidebarProps) {
       <nav className="flex-1 px-3 py-4">
         <ul className="space-y-0.5">
           {navItems.map(({ id, label, href, icon: Icon }) => {
-            const isActive =
-              activeSection != null
-                ? id === activeSection
-                : id === "projects"
-                  ? pathname === "/workspace" || pathname.startsWith("/clients")
-                  : false;
+            const isActive = isNavItemActive(id, pathname);
             return (
               <li key={id}>
                 <Link

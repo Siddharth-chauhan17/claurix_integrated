@@ -12,6 +12,7 @@ export const WORKFLOW_STAGES: WorkflowStageMeta[] = [
   { id: "workstation", label: "Workstation", shortLabel: "Workstation", enabled: true },
   { id: "rfq-upload", label: "Uploaded RFQ", shortLabel: "RFQ", enabled: true },
   { id: "quote-uploads", label: "Uploaded Quotes", shortLabel: "Quotes", enabled: true },
+  { id: "related-emails", label: "Related emails", shortLabel: "Emails", enabled: true },
   { id: "policy-mapping", label: "Policy Mapping", shortLabel: "Mapping", enabled: true },
   { id: "ai-processing", label: "AI Processing", shortLabel: "AI", enabled: false },
   { id: "review-edit", label: "Review & Edit", shortLabel: "Review", enabled: false },

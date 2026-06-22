@@ -18,9 +18,10 @@ from app.schemas.outlook import OutlookDisconnectResponse, OutlookStatusResponse
 from app.services import auth_service
 from app.services.outlook_connection_service import (
     OutlookConnectionConflictError,
+    OutlookTokenAccessError,
     disconnect_connection,
     get_active_connection,
-    refresh_if_needed,
+    prepare_connection_for_status,
     upsert_connection,
 )
 from app.services.outlook_oauth_service import (
@@ -29,8 +30,10 @@ from app.services.outlook_oauth_service import (
     OutlookOAuthError,
     OutlookOAuthService,
     build_oauth_state,
+    resolve_oauth_cookie_secure,
     validate_oauth_state_cookie,
 )
+from app.services.outlook_audit_log import log_oauth_connected, log_oauth_disconnected
 
 router = APIRouter(prefix="/integrations/outlook", tags=["outlook"])
 
@@ -40,7 +43,7 @@ _oauth = OutlookOAuthService()
 def _integrations_redirect(*, outlook: str, reason: str | None = None) -> str:
     settings = get_settings()
     base = settings.frontend_base_url.rstrip("/")
-    url = f"{base}/settings/integrations?outlook={quote(outlook)}"
+    url = f"{base}/workspace/settings?outlook={quote(outlook)}"
     if reason:
         url = f"{url}&reason={quote(reason)}"
     return url
@@ -108,7 +111,7 @@ def outlook_connect(
         max_age=OUTLOOK_OAUTH_STATE_MAX_AGE,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=resolve_oauth_cookie_secure(),
         path="/",
     )
     return response
@@ -167,7 +170,7 @@ def outlook_callback(
         microsoft_user_id, email = _oauth.fetch_graph_identity(
             token_payload["access_token"]
         )
-        upsert_connection(
+        connection = upsert_connection(
             db,
             user_id=user.id,
             organization_id=user.organization_id,
@@ -175,11 +178,27 @@ def outlook_callback(
             email=email,
             token_payload=token_payload,
         )
+        log_oauth_connected(
+            user_id=user.id,
+            organization_id=user.organization_id,
+            connection_id=connection.id,
+            email=email,
+        )
     except OutlookConnectionConflictError:
         response = RedirectResponse(
             url=_integrations_redirect(
                 outlook="error",
                 reason="account_already_linked",
+            ),
+            status_code=status.HTTP_302_FOUND,
+        )
+        response.delete_cookie(OUTLOOK_OAUTH_STATE_COOKIE, path="/")
+        return response
+    except OutlookTokenAccessError:
+        response = RedirectResponse(
+            url=_integrations_redirect(
+                outlook="error",
+                reason="token_encryption_not_configured",
             ),
             status_code=status.HTTP_302_FOUND,
         )
@@ -223,7 +242,7 @@ def outlook_status(
             is_active=False,
             status="not_connected",
         )
-    connection = refresh_if_needed(db, connection)
+    connection = prepare_connection_for_status(db, connection)
     if not connection.is_active:
         return _status_from_connection(connection)
     return _status_from_connection(connection)
@@ -244,4 +263,10 @@ def outlook_disconnect(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No active Outlook connection found",
         )
+    log_oauth_disconnected(
+        user_id=user.id,
+        organization_id=user.organization_id,
+        connection_id=connection.id,
+        email=connection.email,
+    )
     return OutlookDisconnectResponse()

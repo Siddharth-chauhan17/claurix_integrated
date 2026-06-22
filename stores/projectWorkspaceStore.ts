@@ -20,6 +20,7 @@ import {
   reconcileQuoteServerDocumentIds,
   reconcileRfqServerDocumentId,
 } from "@/lib/workspace/reconcile-server-documents";
+import { getProjectRelatedEmails } from "@/lib/api";
 import { clearClauseSourceValueCache } from "@/lib/qcr-editing/excel-source-lookup";
 import {
   selectionConflictsWithMappings,
@@ -84,6 +85,8 @@ type ProjectWorkspaceState = {
   activeMappingId: string | null;
   selectionNotice: string | null;
   hydrated: boolean;
+  relatedEmailsCount: number;
+  relatedEmailsDetailMessageId: string | null;
 
   initProject: (meta: {
     projectId: string;
@@ -124,6 +127,8 @@ type ProjectWorkspaceState = {
   confirmMappingRange: () => void;
   removeMapping: (id: string) => void;
   openMappingEditor: (mappingId: string) => void;
+  refreshRelatedEmailsCount: () => Promise<void>;
+  setRelatedEmailsDetailMessageId: (messageId: string | null) => void;
 };
 
 function snapshot(state: ProjectWorkspaceState): PersistedWorkspaceState {
@@ -191,6 +196,8 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
   activeMappingId: null,
   selectionNotice: null,
   hydrated: false,
+  relatedEmailsCount: 0,
+  relatedEmailsDetailMessageId: null,
 
   initProject: (meta) => {
     set({
@@ -198,8 +205,11 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
       projectName: meta.projectName,
       clientName: meta.clientName,
       clientId: meta.clientId,
+      relatedEmailsCount: 0,
+      relatedEmailsDetailMessageId: null,
     });
     get().hydrate(meta.projectId);
+    void get().refreshRelatedEmailsCount();
   },
 
   hydrate: (projectId) => {
@@ -763,6 +773,21 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
       isSelecting: false,
       selectionNotice: null,
     });
+  },
+
+  refreshRelatedEmailsCount: async () => {
+    const { projectId } = get();
+    if (!projectId) return;
+    try {
+      const { messages } = await getProjectRelatedEmails(projectId);
+      set({ relatedEmailsCount: messages.length });
+    } catch {
+      /* Outlook may be disconnected — badge stays at last value or 0 */
+    }
+  },
+
+  setRelatedEmailsDetailMessageId: (messageId) => {
+    set({ relatedEmailsDetailMessageId: messageId });
   },
 };
 });

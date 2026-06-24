@@ -4,6 +4,10 @@ import { useState } from "react";
 import type { ComparisonStatus } from "@/lib/qcr-editing/types";
 import { STATUS_LABELS } from "@/lib/qcr-editing/status-styles";
 import { clausesWithRemarkDrafts } from "@/lib/qcr-editing/export-payload";
+import {
+  defaultQcrExportFileName,
+  sanitizeExportFileName,
+} from "@/lib/qcr-editing/sanitize-export-filename";
 import { exportQcrWorkbook } from "@/lib/api";
 import { persistQcrExport } from "@/lib/project-workspace/persist-qcr-export";
 import {
@@ -13,6 +17,7 @@ import {
 } from "@/lib/qcr-editing/workspace-store";
 import { cn } from "@/lib/utils";
 import { toast } from "react-toastify";
+import { EmailToolbarButton } from "@/components/project-workspace/EmailToolbarButton";
 import { ExportExcelConfirmModal } from "./ExportExcelConfirmModal";
 import { InsurerColumnsMenu } from "./InsurerColumnsMenu";
 
@@ -27,11 +32,10 @@ export function WorkspaceToolbar() {
   const isSaving = useQcrEditingStore((s) => s.ui.isSaving);
   const saveError = useQcrEditingStore((s) => s.ui.saveError);
   const setFilter = useQcrEditingStore((s) => s.setFilter);
-  const toggleRightPanel = useQcrEditingStore((s) => s.toggleRightPanel);
-  const rightPanelOpen = useQcrEditingStore((s) => s.ui.rightPanelOpen);
   const saveWorkspace = useQcrEditingStore((s) => s.saveWorkspace);
 
   const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportFileName, setExportFileName] = useState("");
   const [isExporting, setIsExporting] = useState(false);
 
   const visibleClauses = useVisibleClauses();
@@ -55,6 +59,13 @@ export function WorkspaceToolbar() {
       toast.warn("No QCR clauses to export.");
       return;
     }
+    setExportFileName(
+      defaultQcrExportFileName(
+        ws.meta.project_name,
+        ws.meta.client_name,
+        ws.workspace_id
+      )
+    );
     setExportModalOpen(true);
   };
 
@@ -64,6 +75,15 @@ export function WorkspaceToolbar() {
       setExportModalOpen(false);
       return;
     }
+
+    const fileName = sanitizeExportFileName(
+      exportFileName,
+      defaultQcrExportFileName(
+        ws.meta.project_name,
+        ws.meta.client_name,
+        ws.workspace_id
+      )
+    );
 
     setIsExporting(true);
     try {
@@ -82,13 +102,6 @@ export function WorkspaceToolbar() {
         sections: ws.sections ?? [],
         insurers: ws.insurers,
       });
-
-      const projectLabel =
-        ws.meta.project_name?.trim() ||
-        ws.meta.client_name?.trim() ||
-        ws.workspace_id;
-      const safeName = projectLabel.replace(/[^\w\- ]+/g, "_").trim() || "QCR";
-      const fileName = `QCR_${safeName}.xlsx`;
 
       await persistQcrExport(ws.meta.project_id, blob, fileName);
       setExportModalOpen(false);
@@ -177,6 +190,7 @@ export function WorkspaceToolbar() {
               Save failed
             </span>
           ) : null}
+          <EmailToolbarButton />
           <button
             type="button"
             onClick={openExportModal}
@@ -185,21 +199,16 @@ export function WorkspaceToolbar() {
           >
             {isExporting ? "Exporting…" : "Export Excel"}
           </button>
-          <button
-            type="button"
-            onClick={() => toggleRightPanel()}
-            className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700"
-          >
-            {rightPanelOpen ? "Hide review" : "Show review"}
-          </button>
         </div>
       </div>
 
       <ExportExcelConfirmModal
         open={exportModalOpen}
         isExporting={isExporting}
-        onConfirm={() => void handleConfirmExport()}
-        onCancel={() => {
+        fileName={exportFileName}
+        onFileNameChange={setExportFileName}
+        onExport={() => void handleConfirmExport()}
+        onDiscard={() => {
           if (!isExporting) setExportModalOpen(false);
         }}
       />

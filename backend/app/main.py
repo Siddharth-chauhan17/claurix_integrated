@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import auth, clients, demo_requests, documents, outlook, outlook_mail, projects, workspace
+from app.routers import auth, clients, demo_requests, documents, outlook, outlook_mail, project_email, projects, workspace
 
 settings = get_settings()
 startup_logger = logging.getLogger("claurix.startup")
@@ -63,6 +63,7 @@ app.include_router(demo_requests.router)
 app.include_router(outlook.router)
 app.include_router(outlook_mail.router)
 app.include_router(projects.router)
+app.include_router(project_email.router)
 app.include_router(documents.router)
 app.include_router(workspace.router)
 

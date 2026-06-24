@@ -14,7 +14,9 @@ export function WorkspaceHeader() {
   const saveStatus = useProjectWorkspaceStore((s) => s.saveStatus);
 
   const showGenerateQcr =
-    currentStage === "policy-mapping" || currentStage === "workstation";
+    currentStage === "policy-mapping" ||
+    currentStage === "workstation" ||
+    currentStage === "export-qcr";
 
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 shadow-sm">
@@ -44,7 +46,11 @@ export function WorkspaceHeader() {
           </p>
         </div>
       </div>
-      {showGenerateQcr ? <GenerateQcrButton /> : null}
+      {showGenerateQcr ? (
+        <div className="flex shrink-0 items-center gap-2">
+          <GenerateQcrButton />
+        </div>
+      ) : null}
     </header>
   );
 }

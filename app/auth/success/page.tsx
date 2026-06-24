@@ -15,12 +15,25 @@ function SuccessContent() {
 
   useEffect(() => {
     if (error) return;
-    toast.success("Logged in successfully with Google 🎉");
-    getCurrentUser().then((u) => {
-      if (u) setUser(u);
-    });
-    const t = setTimeout(() => router.push("/"), 1500);
-    return () => clearTimeout(t);
+
+    let cancelled = false;
+
+    (async () => {
+      const user = await getCurrentUser();
+      if (cancelled) return;
+      if (user) {
+        setUser(user);
+        toast.success("Logged in successfully with Google 🎉");
+        router.replace("/workstation");
+        return;
+      }
+      toast.error("Session could not be established. Please try again.");
+      router.replace("/login?error=session");
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [error, router, setUser]);
 
   if (error) {

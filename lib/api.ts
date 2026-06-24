@@ -171,6 +171,225 @@ export async function importOutlookAttachment(
   return res.json() as Promise<OutlookImportAttachmentResponse>;
 }
 
+export type EmailAttachmentDescriptor = {
+  id: string;
+  name: string;
+  content_type: string;
+  size_bytes: number | null;
+  available: boolean;
+  kind: string;
+};
+
+export type EmailComposeContext = {
+  to: string[];
+  cc: string[];
+  bcc: string[];
+  subject: string;
+  body_html: string;
+  insurer_names: string[];
+  attachments: EmailAttachmentDescriptor[];
+  default_attachment_ids: string[];
+  sender_name: string;
+  sender_email: string;
+  outlook_connected: boolean;
+};
+
+export type InlineEmailAttachmentPayload = {
+  name: string;
+  content_type: string;
+  content_base64: string;
+};
+
+export type ProjectEmailSendPayload = {
+  to: string[];
+  cc: string[];
+  bcc: string[];
+  subject: string;
+  body_html: string;
+  attachment_ids: string[];
+  inline_attachments?: InlineEmailAttachmentPayload[];
+};
+
+export type ProjectEmailSendResponse = {
+  message_id: string | null;
+  conversation_id: string | null;
+  sent_at: string;
+  status: "sent";
+};
+
+export type ProjectEmailDraft = {
+  id: string;
+  subject: string;
+  to: string[];
+  cc: string[];
+  bcc: string[];
+  body_html: string;
+  attachment_ids: string[];
+  inline_attachments: InlineEmailAttachmentPayload[];
+  outlook_draft_id: string | null;
+  conversation_id: string | null;
+  attachment_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ProjectEmailDraftListResponse = {
+  count: number;
+  items: ProjectEmailDraft[];
+};
+
+export type ProjectEmailDraftSavePayload = {
+  draft_id?: string | null;
+  to: string[];
+  cc: string[];
+  bcc: string[];
+  subject: string;
+  body_html: string;
+  attachment_ids: string[];
+  inline_attachments?: InlineEmailAttachmentPayload[];
+};
+
+export type ProjectActivityItem = {
+  id: string;
+  activity_type: string;
+  summary: string;
+  created_at: string;
+  user_id: string;
+};
+
+export type ProjectActivityListResponse = {
+  count: number;
+  items: ProjectActivityItem[];
+};
+
+export async function getEmailComposeContext(
+  projectId: string
+): Promise<EmailComposeContext> {
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/email/compose-context`,
+    { credentials: "include", cache: "no-store" }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to load email composer"));
+  }
+  return res.json() as Promise<EmailComposeContext>;
+}
+
+export async function logEmailComposerOpened(projectId: string): Promise<void> {
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/email/composer-opened`,
+    { method: "POST", credentials: "include" }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to log composer activity"));
+  }
+}
+
+export async function sendProjectEmail(
+  projectId: string,
+  payload: ProjectEmailSendPayload
+): Promise<ProjectEmailSendResponse> {
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/email/send`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to send email"));
+  }
+  return res.json() as Promise<ProjectEmailSendResponse>;
+}
+
+export async function listProjectEmailDrafts(
+  projectId: string
+): Promise<ProjectEmailDraftListResponse> {
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/email/drafts`,
+    { credentials: "include", cache: "no-store" }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to load email drafts"));
+  }
+  return res.json() as Promise<ProjectEmailDraftListResponse>;
+}
+
+export async function getProjectEmailDraft(
+  projectId: string,
+  draftId: string
+): Promise<ProjectEmailDraft> {
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/email/drafts/${encodeURIComponent(draftId)}`,
+    { credentials: "include", cache: "no-store" }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to load email draft"));
+  }
+  return res.json() as Promise<ProjectEmailDraft>;
+}
+
+export async function saveProjectEmailDraft(
+  projectId: string,
+  payload: ProjectEmailDraftSavePayload
+): Promise<ProjectEmailDraft> {
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/email/drafts`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to save email draft"));
+  }
+  return res.json() as Promise<ProjectEmailDraft>;
+}
+
+export async function sendProjectEmailDraft(
+  projectId: string,
+  draftId: string
+): Promise<ProjectEmailSendResponse> {
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/email/drafts/${encodeURIComponent(draftId)}/send`,
+    { method: "POST", credentials: "include" }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to send draft"));
+  }
+  return res.json() as Promise<ProjectEmailSendResponse>;
+}
+
+export async function deleteProjectEmailDraft(
+  projectId: string,
+  draftId: string
+): Promise<void> {
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/email/drafts/${encodeURIComponent(draftId)}`,
+    { method: "DELETE", credentials: "include" }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to delete draft"));
+  }
+}
+
+export async function getProjectActivities(
+  projectId: string
+): Promise<ProjectActivityListResponse> {
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/activities`,
+    { credentials: "include", cache: "no-store" }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to load project activity"));
+  }
+  return res.json() as Promise<ProjectActivityListResponse>;
+}
+
 /** User shape returned by GET /auth/me (matches backend UserResponse). */
 export interface User {
   id: string;

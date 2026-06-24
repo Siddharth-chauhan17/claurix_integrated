@@ -13,7 +13,11 @@ import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 import { useProjectWorkspaceStore } from "@/stores/projectWorkspaceStore";
 import { useActivityStore } from "./activity-store";
-import { logClauseBrokerRemark, logInsurerPatch } from "./activity-logging";
+import {
+  logClauseBrokerRemark,
+  logClauseRemoved,
+  logInsurerPatch,
+} from "./activity-logging";
 import { fetchQcrWorkspace, saveQcrWorkspace } from "./mock-api";
 import {
   applyClausePatch,
@@ -29,6 +33,12 @@ import {
   upsertRemarkDraftInList,
   type InsurerRemarkDraft,
 } from "./remark-drafts";
+import {
+  clearRemarkDraftsFromSession,
+  filterRemarkDraftsForClauses,
+  loadRemarkDraftsFromSession,
+  saveRemarkDraftsToSession,
+} from "./remark-draft-storage";
 import type {
   ClauseComparison,
   ClauseComparisonPatch,
@@ -123,6 +133,7 @@ type QcrEditingStore = {
   openRemarkDraft: (draft: InsurerRemarkDraft) => void;
 
   revertClause: (clauseId: string) => void;
+  deleteClause: (clauseId: string) => void;
   saveWorkspace: () => Promise<void>;
 };
 
@@ -169,6 +180,14 @@ function schedulePersistWorkspace(immediate = false): void {
     persistDebounceId = null;
     void useQcrEditingStore.getState().saveWorkspace();
   }, PERSIST_DEBOUNCE_MS);
+}
+
+function syncRemarkDraftsToSession(
+  projectId: string | undefined,
+  drafts: readonly InsurerRemarkDraft[]
+): void {
+  if (!projectId) return;
+  saveRemarkDraftsToSession(projectId, drafts);
 }
 
 function markDirty(
@@ -225,10 +244,18 @@ export const useQcrEditingStore = create<QcrEditingStore>((set, get) => ({
       );
       useActivityStore.getState().initProject(projectId);
 
+      const clauseIds = new Set(clauses.map((c) => c.clause_id));
+      const remarkDrafts = filterRemarkDraftsForClauses(
+        loadRemarkDraftsFromSession(projectId),
+        clauseIds
+      );
+      syncRemarkDraftsToSession(projectId, remarkDrafts);
+
       set({
         workspace,
         clauses,
         baselineClauses: cloneClauses(workspace.clauses),
+        draft: { ...defaultDraft, remarkDrafts },
         ui: {
           ...defaultUi,
           isLoading: false,
@@ -251,6 +278,8 @@ export const useQcrEditingStore = create<QcrEditingStore>((set, get) => ({
   },
 
   resetWorkspace: () => {
+    const projectId = get().workspace?.meta.project_id;
+    if (projectId) clearRemarkDraftsFromSession(projectId);
     useActivityStore.getState().reset();
     set({
       workspace: null,
@@ -407,6 +436,7 @@ export const useQcrEditingStore = create<QcrEditingStore>((set, get) => ({
       clauseId,
       insurer
     );
+    syncRemarkDraftsToSession(workspace?.meta.project_id, remarkDrafts);
     set({
       clauses: next,
       baselineClauses: nextBaseline,
@@ -419,25 +449,33 @@ export const useQcrEditingStore = create<QcrEditingStore>((set, get) => ({
   },
 
   upsertRemarkDraft: (entry) =>
-    set((s) => ({
-      draft: {
-        ...s.draft,
-        remarkDrafts: upsertRemarkDraftInList(s.draft.remarkDrafts, entry),
-        lastEditedAt: new Date().toISOString(),
-      },
-    })),
+    set((s) => {
+      const remarkDrafts = upsertRemarkDraftInList(s.draft.remarkDrafts, entry);
+      syncRemarkDraftsToSession(s.workspace?.meta.project_id, remarkDrafts);
+      return {
+        draft: {
+          ...s.draft,
+          remarkDrafts,
+          lastEditedAt: new Date().toISOString(),
+        },
+      };
+    }),
 
   discardRemarkDraft: (clauseId, insurer) =>
-    set((s) => ({
-      draft: {
-        ...s.draft,
-        remarkDrafts: removeRemarkDraftFromList(
-          s.draft.remarkDrafts,
-          clauseId,
-          insurer
-        ),
-      },
-    })),
+    set((s) => {
+      const remarkDrafts = removeRemarkDraftFromList(
+        s.draft.remarkDrafts,
+        clauseId,
+        insurer
+      );
+      syncRemarkDraftsToSession(s.workspace?.meta.project_id, remarkDrafts);
+      return {
+        draft: {
+          ...s.draft,
+          remarkDrafts,
+        },
+      };
+    }),
 
   commitRemarkDraft: (clauseId, insurer) => {
     const { draft } = get();
@@ -467,7 +505,41 @@ export const useQcrEditingStore = create<QcrEditingStore>((set, get) => ({
     const next = clauses.map((c) => (c.clause_id === clauseId ? cloneClauses([base])[0] : c));
     const ids = draft.dirtyClauseIds.filter((id) => id !== clauseId);
     const remarkDrafts = draft.remarkDrafts.filter((d) => d.clause_id !== clauseId);
+    syncRemarkDraftsToSession(get().workspace?.meta.project_id, remarkDrafts);
     set({ clauses: next, draft: { ...draft, dirtyClauseIds: ids, remarkDrafts } });
+    schedulePersistWorkspace(true);
+  },
+
+  deleteClause: (clauseId) => {
+    const { clauses, baselineClauses, draft, ui, workspace } = get();
+    const clause = getClauseById(clauses, clauseId);
+    if (!clause) return;
+
+    logClauseRemoved(clause, workspace?.meta.project_id);
+
+    const next = clauses.filter((c) => c.clause_id !== clauseId);
+    const nextBaseline = baselineClauses.filter((c) => c.clause_id !== clauseId);
+    const ids = draft.dirtyClauseIds.filter((id) => id !== clauseId);
+    const remarkDrafts = draft.remarkDrafts.filter((d) => d.clause_id !== clauseId);
+
+    let activeClauseId = ui.activeClauseId;
+    let activeInsurer = ui.activeInsurer;
+    let rightPanelOpen = ui.rightPanelOpen;
+    if (activeClauseId === clauseId) {
+      const sectionClauses = next.filter((c) => c.section_id === ui.activeSectionId);
+      const nextActive = sectionClauses[0] ?? next[0] ?? null;
+      activeClauseId = nextActive?.clause_id ?? null;
+      activeInsurer = null;
+      rightPanelOpen = activeClauseId ? rightPanelOpen : false;
+    }
+
+    syncRemarkDraftsToSession(get().workspace?.meta.project_id, remarkDrafts);
+    set({
+      clauses: next,
+      baselineClauses: nextBaseline,
+      draft: { ...draft, dirtyClauseIds: ids, remarkDrafts },
+      ui: { ...ui, activeClauseId, activeInsurer, rightPanelOpen },
+    });
     schedulePersistWorkspace(true);
   },
 

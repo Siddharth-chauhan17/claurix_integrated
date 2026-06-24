@@ -94,7 +94,9 @@ export const ActivityEventRow = memo(function ActivityEventRow({
               compact={compact}
             />
           )}
-          {(event.type === "CLAUSE_REVIEWED" || event.type === "CLAUSE_UNREVIEWED") && (
+          {(event.type === "CLAUSE_REVIEWED" ||
+            event.type === "CLAUSE_UNREVIEWED" ||
+            event.type === "CLAUSE_DELETED") && (
             <ValueChange
               oldValue={event.old_value}
               newValue={event.new_value}

@@ -23,7 +23,8 @@ export type ActivityEventType =
   | "AI_OVERRIDE_APPLIED"
   | "AI_OVERRIDE_REMOVED"
   | "CLAUSE_REVIEWED"
-  | "CLAUSE_UNREVIEWED";
+  | "CLAUSE_UNREVIEWED"
+  | "CLAUSE_DELETED";
 
 export const ACTIVITY_EVENT_TYPES: ActivityEventType[] = [
   "FIELD_UPDATED",
@@ -33,6 +34,7 @@ export const ACTIVITY_EVENT_TYPES: ActivityEventType[] = [
   "AI_OVERRIDE_REMOVED",
   "CLAUSE_REVIEWED",
   "CLAUSE_UNREVIEWED",
+  "CLAUSE_DELETED",
 ];
 
 export type CreateActivityEventInput = {

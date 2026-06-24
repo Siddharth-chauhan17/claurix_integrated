@@ -196,6 +196,20 @@ export function logClauseUnreviewed(
   });
 }
 
+export function logClauseDeleted(
+  ctx: ActivityLogContext,
+  clause: string
+): ActivityEvent | null {
+  return append(ctx, {
+    type: "CLAUSE_DELETED",
+    clause,
+    insurer: "—",
+    field: "clause",
+    old_value: clause,
+    new_value: "Removed from comparison",
+  });
+}
+
 /** Log all changed fields on an insurer comparison patch. */
 export function logInsurerComparisonChanges(
   ctx: ActivityLogContext,

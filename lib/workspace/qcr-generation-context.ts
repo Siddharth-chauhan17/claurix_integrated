@@ -3,6 +3,7 @@
  * When the user removes/re-uploads the RFQ or changes mappings, prior results are invalid.
  */
 
+import { clearRemarkDraftsFromSession } from "@/lib/qcr-editing/remark-draft-storage";
 import type { PolicyMapping, RfqWorkbook } from "@/types/project-workspace";
 import { clearWorkspaceSession } from "./session";
 
@@ -80,6 +81,7 @@ export function invalidateQcrGeneration(projectId: string): void {
   const saved = loadQcrGenerationContext(projectId);
   clearQcrGenerationContext(projectId);
   clearWorkspaceSession(projectId);
+  clearRemarkDraftsFromSession(projectId);
   if (saved?.workspaceId && typeof window !== "undefined") {
     sessionStorage.removeItem(`claurix:qcr-editing:${saved.workspaceId}`);
   }

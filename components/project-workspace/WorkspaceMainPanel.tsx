@@ -3,7 +3,8 @@
 import dynamic from "next/dynamic";
 import { QcrGenerationPanel } from "@/components/project-workspace/QcrGenerationPanel";
 import { WorkstationDocumentsPanel } from "@/components/project-workspace/WorkstationDocumentsPanel";
-import { RelatedEmailsPanel } from "@/components/project-workspace/RelatedEmailsPanel";
+import { EmailWorkspacePanel } from "@/components/project-workspace/EmailWorkspacePanel";
+import { ProjectActivityPanel } from "@/components/project-workspace/ProjectActivityPanel";
 import { WorkstationUploadHub } from "@/components/project-workspace/WorkstationUploadHub";
 import { useProjectWorkspaceStore } from "@/stores/projectWorkspaceStore";
 import { useQcrWorkspaceStore } from "@/stores/qcrWorkspaceStore";
@@ -30,11 +31,7 @@ export function WorkspaceMainPanel() {
     (s) => s.isGenerating || Boolean(s.error)
   );
 
-  if (
-    currentStage === "ai-processing" ||
-    currentStage === "review-edit" ||
-    currentStage === "activity"
-  ) {
+  if (currentStage === "ai-processing" || currentStage === "review-edit") {
     return (
       <div className="flex h-full flex-col items-center justify-center p-8 text-center">
         <p className="text-lg font-semibold text-slate-800">Coming soon</p>
@@ -44,6 +41,14 @@ export function WorkspaceMainPanel() {
         </p>
       </div>
     );
+  }
+
+  if (currentStage === "activity") {
+    return <ProjectActivityPanel />;
+  }
+
+  if (currentStage === "email") {
+    return <EmailWorkspacePanel />;
   }
 
   if (currentStage === "document-upload") {
@@ -56,10 +61,6 @@ export function WorkspaceMainPanel() {
 
   if (currentStage === "quote-uploads") {
     return <WorkstationDocumentsPanel variant="quotes" />;
-  }
-
-  if (currentStage === "related-emails") {
-    return <RelatedEmailsPanel />;
   }
 
   if (currentStage === "export-qcr") {

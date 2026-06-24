@@ -46,5 +46,6 @@ export {
   logOverrideRemoved,
   logClauseReviewed,
   logClauseUnreviewed,
+  logClauseDeleted,
 } from "./activity-utils";
 export { WORKSPACE_USERS, getWorkspaceUserName, registerAuthUser } from "./users";

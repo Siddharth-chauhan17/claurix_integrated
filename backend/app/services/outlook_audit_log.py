@@ -170,6 +170,64 @@ def log_attachment_import_failed(
     )
 
 
+def log_send_mail_started(
+    *,
+    user_id: str,
+    organization_id: str,
+    project_id: str,
+    recipient_count: int,
+    attachment_count: int,
+) -> None:
+    logger.info(
+        "event=send_mail_started %s recipient_count=%s attachment_count=%s",
+        _format_context(
+            user_id=user_id,
+            organization_id=organization_id,
+            project_id=project_id,
+        ),
+        recipient_count,
+        attachment_count,
+    )
+
+
+def log_send_mail_completed(
+    *,
+    user_id: str,
+    organization_id: str,
+    project_id: str,
+    message_id: str | None,
+    attachment_count: int,
+) -> None:
+    logger.info(
+        "event=send_mail_completed %s message_id=%s attachment_count=%s",
+        _format_context(
+            user_id=user_id,
+            organization_id=organization_id,
+            project_id=project_id,
+        ),
+        message_id,
+        attachment_count,
+    )
+
+
+def log_send_mail_failed(
+    *,
+    user_id: str,
+    organization_id: str,
+    project_id: str,
+    reason: str,
+) -> None:
+    logger.warning(
+        "event=send_mail_failed %s reason=%s",
+        _format_context(
+            user_id=user_id,
+            organization_id=organization_id,
+            project_id=project_id,
+        ),
+        reason,
+    )
+
+
 def log_graph_error(
     *,
     status_code: int,

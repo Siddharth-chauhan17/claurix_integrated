@@ -72,6 +72,7 @@ class Settings(BaseSettings):
 
     # Outlook import safety (Outlook imports only; manual uploads unchanged)
     outlook_max_import_size_mb: int = 25
+    outlook_max_email_attachment_mb: int = 3
 
     # OAuth state cookie Secure flag; None = auto (True when redirect URI is https)
     outlook_oauth_cookie_secure: Optional[bool] = None

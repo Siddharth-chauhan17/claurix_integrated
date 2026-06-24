@@ -30,6 +30,7 @@ const TYPE_ACTION_SUMMARY: Record<ActivityEventType, string> = {
   AI_OVERRIDE_REMOVED: "Removed AI override",
   CLAUSE_REVIEWED: "Marked reviewed",
   CLAUSE_UNREVIEWED: "Marked not reviewed",
+  CLAUSE_DELETED: "Deleted clause row",
 };
 
 export function getFieldLabel(field: string): string {
@@ -129,6 +130,8 @@ export function getActivityTypeBadgeStyle(type: string): string {
       return "bg-emerald-50 text-emerald-800 ring-emerald-200";
     case "CLAUSE_UNREVIEWED":
       return "bg-slate-100 text-slate-700 ring-slate-200";
+    case "CLAUSE_DELETED":
+      return "bg-red-50 text-red-800 ring-red-200";
     default:
       return "bg-slate-100 text-slate-700 ring-slate-200";
   }

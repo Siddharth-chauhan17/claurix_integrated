@@ -54,7 +54,7 @@ function formatFileSize(bytes: number | null | undefined): string {
   return `${(kb / 1024).toFixed(1)} MB`;
 }
 
-export function RelatedEmailsPanel() {
+export function RelatedEmailsPanel({ embedded = false }: { embedded?: boolean }) {
   const projectId = useProjectWorkspaceStore((s) => s.projectId);
   const projectName = useProjectWorkspaceStore((s) => s.projectName);
   const clientName = useProjectWorkspaceStore((s) => s.clientName);
@@ -123,13 +123,16 @@ export function RelatedEmailsPanel() {
   }
 
   return (
-    <div className="h-full overflow-y-auto p-6 sm:p-8">
+    <div className={embedded ? "h-full overflow-y-auto p-6 sm:p-8" : "h-full overflow-y-auto p-6 sm:p-8"}>
       <div className="mx-auto max-w-2xl">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold text-slate-900">Related Outlook emails</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Matched on &apos;{projectName}&apos;, {clientName}
+            {!embedded ? (
+              <h2 className="text-lg font-semibold text-slate-900">Related Outlook emails</h2>
+            ) : null}
+            <p className={cn("text-sm text-slate-500", !embedded && "mt-1")}>
+              {embedded ? "Related messages matched on " : "Matched on "}
+              &apos;{projectName}&apos;, {clientName}
             </p>
           </div>
           <button

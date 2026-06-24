@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { QcrEditingLoadingScreen } from "@/components/qcr-editing/QcrEditingLoadingScreen";
 import { WorkspaceShell } from "@/components/qcr-editing/WorkspaceShell";
+import { EmailComposerProvider } from "@/components/email/EmailComposerProvider";
 import { useAuth } from "@/components/providers/AuthProvider";
 import Link from "next/link";
 import { projectWorkstationPath } from "@/lib/projectWorkstation";
@@ -76,5 +77,9 @@ export default function ProjectQcrWorkspacePage() {
     );
   }
 
-  return <WorkspaceShell />;
+  return (
+    <EmailComposerProvider projectId={projectId}>
+      <WorkspaceShell />
+    </EmailComposerProvider>
+  );
 }

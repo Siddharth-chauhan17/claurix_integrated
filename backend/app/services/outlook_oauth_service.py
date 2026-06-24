@@ -15,7 +15,9 @@ from app.config import get_settings
 OUTLOOK_OAUTH_STATE_COOKIE = "outlook_oauth_state"
 OUTLOOK_OAUTH_STATE_MAX_AGE = 600  # 10 minutes
 
-OUTLOOK_SCOPES = "openid profile offline_access User.Read Mail.Read"
+OUTLOOK_SCOPES = (
+    "openid profile offline_access User.Read Mail.Read Mail.Send Mail.ReadWrite"
+)
 
 GRAPH_ME_URL = "https://graph.microsoft.com/v1.0/me"
 

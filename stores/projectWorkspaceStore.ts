@@ -20,7 +20,7 @@ import {
   reconcileQuoteServerDocumentIds,
   reconcileRfqServerDocumentId,
 } from "@/lib/workspace/reconcile-server-documents";
-import { getProjectRelatedEmails } from "@/lib/api";
+import { getProjectRelatedEmails, listProjectEmailDrafts } from "@/lib/api";
 import { clearClauseSourceValueCache } from "@/lib/qcr-editing/excel-source-lookup";
 import {
   selectionConflictsWithMappings,
@@ -39,6 +39,7 @@ import type {
   RfqWorkbook,
   RowSelectionRange,
   WorkflowStageId,
+  EmailWorkspaceTab,
 } from "@/types/project-workspace";
 
 function newId(): string {
@@ -59,6 +60,7 @@ type ProjectWorkspaceState = {
   clientName: string;
   clientId: string | null;
   currentStage: WorkflowStageId;
+  emailTab: EmailWorkspaceTab;
   sidebarCollapsed: boolean;
   rfqWorkbook: RfqWorkbook | null;
   /**
@@ -87,6 +89,8 @@ type ProjectWorkspaceState = {
   hydrated: boolean;
   relatedEmailsCount: number;
   relatedEmailsDetailMessageId: string | null;
+  emailDraftsCount: number;
+  emailDraftsVersion: number;
 
   initProject: (meta: {
     projectId: string;
@@ -100,6 +104,7 @@ type ProjectWorkspaceState = {
   restoreRfqFileBlob: (projectId: string) => Promise<void>;
   persist: () => void;
   setStage: (stage: WorkflowStageId) => void;
+  setEmailTab: (tab: EmailWorkspaceTab) => void;
   proceedToPolicyMapping: () => boolean;
   toggleSidebar: () => void;
   setRfqWorkbook: (workbook: RfqWorkbook, sourceFile: File) => void;
@@ -128,12 +133,15 @@ type ProjectWorkspaceState = {
   removeMapping: (id: string) => void;
   openMappingEditor: (mappingId: string) => void;
   refreshRelatedEmailsCount: () => Promise<void>;
+  refreshEmailDraftsCount: () => Promise<void>;
+  bumpEmailDraftsVersion: () => void;
   setRelatedEmailsDetailMessageId: (messageId: string | null) => void;
 };
 
 function snapshot(state: ProjectWorkspaceState): PersistedWorkspaceState {
   return {
     currentStage: state.currentStage,
+    emailTab: state.emailTab,
     sidebarCollapsed: state.sidebarCollapsed,
     rfqWorkbook: state.rfqWorkbook,
     quoteFiles: state.quoteFiles,
@@ -177,6 +185,7 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
   clientName: "",
   clientId: null,
   currentStage: "document-upload",
+  emailTab: "inbox",
   sidebarCollapsed: false,
   rfqWorkbook: null,
   rfqFileBlob: null,
@@ -198,6 +207,8 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
   hydrated: false,
   relatedEmailsCount: 0,
   relatedEmailsDetailMessageId: null,
+  emailDraftsCount: 0,
+  emailDraftsVersion: 0,
 
   initProject: (meta) => {
     set({
@@ -207,23 +218,38 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
       clientId: meta.clientId,
       relatedEmailsCount: 0,
       relatedEmailsDetailMessageId: null,
+      emailDraftsCount: 0,
+      emailDraftsVersion: 0,
     });
     get().hydrate(meta.projectId);
     void get().refreshRelatedEmailsCount();
+    void get().refreshEmailDraftsCount();
   },
 
   hydrate: (projectId) => {
     const saved = loadPersistedWorkspace(projectId);
     if (saved) {
-      let stage = saved.currentStage;
+      let stage = saved.currentStage as WorkflowStageId | "related-emails" | "email-drafts";
+      let emailTab: EmailWorkspaceTab = saved.emailTab ?? "inbox";
+
       if (stage === "workstation") {
         stage = saved.rfqWorkbook ? "policy-mapping" : "document-upload";
       }
       if (stage === "policy-mapping" && !saved.rfqWorkbook) {
         stage = "document-upload";
       }
+      if (stage === "related-emails") {
+        stage = "email";
+        emailTab = "inbox";
+      }
+      if (stage === "email-drafts") {
+        stage = "email";
+        emailTab = "drafts";
+      }
+
       set({
         currentStage: stage,
+        emailTab,
         sidebarCollapsed: saved.sidebarCollapsed,
         rfqWorkbook: saved.rfqWorkbook,
         // Blob is restored asynchronously from IndexedDB (see restoreRfqFileBlob).
@@ -304,6 +330,11 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
     } else {
       set({ currentStage: stage });
     }
+    get().persist();
+  },
+
+  setEmailTab: (tab) => {
+    set({ emailTab: tab });
     get().persist();
   },
 
@@ -784,6 +815,22 @@ export const useProjectWorkspaceStore = create<ProjectWorkspaceState>((set, get)
     } catch {
       /* Outlook may be disconnected — badge stays at last value or 0 */
     }
+  },
+
+  refreshEmailDraftsCount: async () => {
+    const { projectId } = get();
+    if (!projectId) return;
+    try {
+      const { count } = await listProjectEmailDrafts(projectId);
+      set({ emailDraftsCount: count });
+    } catch {
+      /* ignore */
+    }
+  },
+
+  bumpEmailDraftsVersion: () => {
+    set((s) => ({ emailDraftsVersion: s.emailDraftsVersion + 1 }));
+    void get().refreshEmailDraftsCount();
   },
 
   setRelatedEmailsDetailMessageId: (messageId) => {

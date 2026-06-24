@@ -24,9 +24,15 @@ from app.services import auth_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-# Frontend URL to redirect after successful Google login
-OAUTH_SUCCESS_REDIRECT = "http://localhost:3000/auth/success"
 OAUTH_STATE_COOKIE = "oauth_state"
+
+
+def _oauth_success_redirect(*, error: str | None = None) -> str:
+    base = get_settings().frontend_base_url.rstrip("/")
+    url = f"{base}/auth/success"
+    if error:
+        return f"{url}?error={quote(error)}"
+    return url
 ACCESS_TOKEN_COOKIE = "access_token"
 ACCESS_TOKEN_MAX_AGE = 60 * 60 * 24  # 24 hours (matches access_token_expire_minutes)
 
@@ -170,6 +176,7 @@ def auth_google(request: Request) -> RedirectResponse:
         OAUTH_STATE_COOKIE,
         value=state,
         max_age=600,  # 10 minutes
+        path="/",
         httponly=True,
         samesite="lax",
         secure=False,
@@ -190,32 +197,45 @@ def auth_google_callback(
 ) -> RedirectResponse:
     """Exchange code for token, create or link user, set cookie, redirect to frontend."""
     if error:
-        redirect_url = f"{OAUTH_SUCCESS_REDIRECT}?error={quote(error)}"
-        return RedirectResponse(url=redirect_url, status_code=status.HTTP_302_FOUND)
+        return RedirectResponse(
+            url=_oauth_success_redirect(error=error),
+            status_code=status.HTTP_302_FOUND,
+        )
 
     if not code or not state:
-        redirect_url = f"{OAUTH_SUCCESS_REDIRECT}?error=missing_code_or_state"
-        return RedirectResponse(url=redirect_url, status_code=status.HTTP_302_FOUND)
+        return RedirectResponse(
+            url=_oauth_success_redirect(error="missing_code_or_state"),
+            status_code=status.HTTP_302_FOUND,
+        )
 
     cookie_state = request.cookies.get(OAUTH_STATE_COOKIE)
     if not cookie_state or not secrets.compare_digest(cookie_state, state):
-        redirect_url = f"{OAUTH_SUCCESS_REDIRECT}?error=invalid_state"
-        return RedirectResponse(url=redirect_url, status_code=status.HTTP_302_FOUND)
+        return RedirectResponse(
+            url=_oauth_success_redirect(error="invalid_state"),
+            status_code=status.HTTP_302_FOUND,
+        )
 
     try:
         email, name, google_id = auth_service.exchange_google_code_for_userinfo(code)
     except Exception as e:
-        redirect_url = f"{OAUTH_SUCCESS_REDIRECT}?error={quote(str(e))}"
-        return RedirectResponse(url=redirect_url, status_code=status.HTTP_302_FOUND)
+        return RedirectResponse(
+            url=_oauth_success_redirect(error=str(e)),
+            status_code=status.HTTP_302_FOUND,
+        )
 
     try:
         user = auth_service.handle_google_user(db, email=email, name=name, google_id=google_id)
     except ValueError as e:
-        redirect_url = f"{OAUTH_SUCCESS_REDIRECT}?error={quote(str(e))}"
-        return RedirectResponse(url=redirect_url, status_code=status.HTTP_302_FOUND)
+        return RedirectResponse(
+            url=_oauth_success_redirect(error=str(e)),
+            status_code=status.HTTP_302_FOUND,
+        )
 
     access_token, _ = auth_service.create_access_token(user.id)
-    response = RedirectResponse(url=OAUTH_SUCCESS_REDIRECT, status_code=status.HTTP_302_FOUND)
+    response = RedirectResponse(
+        url=_oauth_success_redirect(),
+        status_code=status.HTTP_302_FOUND,
+    )
     response.set_cookie(
         key=ACCESS_TOKEN_COOKIE,
         value=access_token,
@@ -225,5 +245,5 @@ def auth_google_callback(
         samesite="lax",
         secure=False,
     )
-    response.delete_cookie(OAUTH_STATE_COOKIE)
+    response.delete_cookie(OAUTH_STATE_COOKIE, path="/")
     return response

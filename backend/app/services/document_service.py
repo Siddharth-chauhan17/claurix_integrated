@@ -91,6 +91,19 @@ def list_documents_for_project(
     return list(db.scalars(stmt).all())
 
 
+def get_document_for_project(
+    db: Session,
+    project: Project,
+    document_id: str,
+) -> ProjectDocument | None:
+    stmt = select(ProjectDocument).where(
+        ProjectDocument.id == document_id,
+        ProjectDocument.project_id == project.id,
+        ProjectDocument.organization_id == project.organization_id,
+    )
+    return db.scalars(stmt).first()
+
+
 def _delete_document_files(docs: list[ProjectDocument]) -> None:
     for doc in docs:
         path = Path(doc.storage_path)

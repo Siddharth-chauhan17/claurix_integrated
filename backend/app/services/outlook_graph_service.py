@@ -930,3 +930,126 @@ class OutlookGraphService:
 
         }
 
+    def _request_json(
+        self,
+        method: str,
+        path: str,
+        access_token: str,
+        *,
+        json_body: dict[str, Any] | None = None,
+        extra_headers: dict[str, str] | None = None,
+        allow_empty: bool = False,
+    ) -> dict[str, Any]:
+        """Graph request with JSON body; supports 202/204 empty responses."""
+        url = path if path.startswith("http") else f"{GRAPH_BASE_URL}{path}"
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+            **(extra_headers or {}),
+        }
+
+        for attempt in range(MAX_429_RETRIES + 1):
+            try:
+                response = requests.request(
+                    method,
+                    url,
+                    headers=headers,
+                    json=json_body,
+                    timeout=DEFAULT_TIMEOUT,
+                )
+            except requests.RequestException as exc:
+                raise OutlookGraphServerError(
+                    f"Graph request failed: {exc}",
+                    status_code=502,
+                ) from exc
+
+            if response.status_code == 429 and attempt < MAX_429_RETRIES:
+                time.sleep(
+                    _parse_retry_after(response.headers.get("Retry-After"), attempt)
+                )
+                continue
+
+            if allow_empty and response.status_code in (202, 204):
+                return {}
+
+            _raise_for_status(response, path)
+            if not response.content:
+                return {}
+            payload = response.json()
+            if not isinstance(payload, dict):
+                raise OutlookGraphError("Unexpected Graph response format")
+            return payload
+
+        raise OutlookGraphRateLimited(
+            "Microsoft Graph rate limit exceeded after retries",
+            retry_after=None,
+        )
+
+    def update_draft_message(
+        self,
+        access_token: str,
+        message_id: str,
+        message: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Update an existing Outlook draft (requires Mail.ReadWrite)."""
+        encoded_id = quote(message_id, safe="")
+        return self._request_json(
+            "PATCH",
+            f"/me/messages/{encoded_id}",
+            access_token,
+            json_body=message,
+            allow_empty=True,
+        )
+
+    def delete_draft_message(self, access_token: str, message_id: str) -> None:
+        """Delete an Outlook draft message."""
+        encoded_id = quote(message_id, safe="")
+        self._request_json(
+            "DELETE",
+            f"/me/messages/{encoded_id}",
+            access_token,
+            allow_empty=True,
+        )
+
+    def send_mail_message(
+        self,
+        access_token: str,
+        message: dict[str, Any],
+        *,
+        save_to_sent_items: bool = True,
+    ) -> None:
+        """Send a message in one operation (requires Mail.Send, not Mail.ReadWrite)."""
+        self._request_json(
+            "POST",
+            "/me/sendMail",
+            access_token,
+            json_body={
+                "message": message,
+                "saveToSentItems": save_to_sent_items,
+            },
+            allow_empty=True,
+        )
+
+    def create_draft_message(
+        self,
+        access_token: str,
+        message: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Create a draft message (returns id + conversationId)."""
+        return self._request_json(
+            "POST",
+            "/me/messages",
+            access_token,
+            json_body=message,
+        )
+
+    def send_draft_message(self, access_token: str, message_id: str) -> None:
+        """Send an existing draft message."""
+        encoded_id = quote(message_id, safe="")
+        self._request_json(
+            "POST",
+            f"/me/messages/{encoded_id}/send",
+            access_token,
+            allow_empty=True,
+        )
+

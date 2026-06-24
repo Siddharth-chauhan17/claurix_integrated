@@ -191,6 +191,12 @@ export function ReviewPanelV2() {
     setPendingRemark(null);
   }, [activeClauseId, activeInsurer, upsertRemarkDraft]);
 
+  useEffect(() => {
+    const flushPending = () => persistPendingToDrafts(pendingRef.current);
+    window.addEventListener("beforeunload", flushPending);
+    return () => window.removeEventListener("beforeunload", flushPending);
+  }, [upsertRemarkDraft]);
+
   const handleRemarkDraft = (
     insurer: string,
     draft: string,

@@ -5,12 +5,14 @@ export type WorkflowStageId =
   | "workstation"
   | "rfq-upload"
   | "quote-uploads"
-  | "related-emails"
+  | "email"
   | "policy-mapping"
   | "ai-processing"
   | "review-edit"
   | "export-qcr"
   | "activity";
+
+export type EmailWorkspaceTab = "inbox" | "drafts";
 
 export type SheetRow = Record<string, unknown> & { _rowIndex: number };
 
@@ -74,6 +76,7 @@ export type RowSelectionRange = {
 
 export type PersistedWorkspaceState = {
   currentStage: WorkflowStageId;
+  emailTab?: EmailWorkspaceTab;
   sidebarCollapsed: boolean;
   rfqWorkbook: RfqWorkbook | null;
   quoteFiles: QuoteFileRef[];

@@ -5,6 +5,7 @@
 import {
   getActivityContext,
   logBrokerNote,
+  logClauseDeleted,
   logFieldUpdate,
   logInsurerComparisonChanges,
 } from "./activity-utils";
@@ -47,4 +48,13 @@ export function logClauseBrokerRemark(
     return;
   }
   logBrokerNote(ctx, clause.rfq_clause, "—", oldRemark, newRemark);
+}
+
+export function logClauseRemoved(
+  clause: ClauseComparison,
+  projectId: string | undefined
+): void {
+  const ctx = resolveActivityContext(projectId);
+  if (!ctx) return;
+  logClauseDeleted(ctx, clause.rfq_clause);
 }

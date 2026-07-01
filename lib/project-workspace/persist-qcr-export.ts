@@ -24,6 +24,8 @@ export async function persistQcrExport(
     sidebarCollapsed: existing?.sidebarCollapsed ?? false,
     rfqWorkbook: existing?.rfqWorkbook ?? null,
     quoteFiles: existing?.quoteFiles ?? [],
+    archivedQuoteFiles: existing?.archivedQuoteFiles ?? [],
+    archivedRfqFiles: existing?.archivedRfqFiles ?? [],
     activeSheetName: existing?.activeSheetName ?? null,
     mappings: existing?.mappings ?? [],
     qcrExport: ref,

@@ -41,10 +41,17 @@ export const useQcrWorkspaceStore = create<QcrWorkspaceState>((set) => ({
 
     set({ isGenerating: true, error: null });
     try {
+      const uploadError = await ws.ensureQuotesOnServer(projectId);
+      if (uploadError) {
+        set({ isGenerating: false, error: uploadError });
+        throw new Error(uploadError);
+      }
+
+      const fresh = useProjectWorkspaceStore.getState();
       const validationError = validateWorkstationForQcrGeneration(
-        ws.rfqWorkbook,
-        ws.quoteFiles,
-        ws.mappings
+        fresh.rfqWorkbook,
+        fresh.quoteFiles,
+        fresh.mappings
       );
       if (validationError) {
         set({ isGenerating: false, error: validationError });
@@ -53,18 +60,18 @@ export const useQcrWorkspaceStore = create<QcrWorkspaceState>((set) => ({
 
       const payload = buildWorkspacePayload({
         projectId,
-        projectName: ws.projectName,
-        clientName: ws.clientName,
-        rfqWorkbook: ws.rfqWorkbook,
-        quoteFiles: ws.quoteFiles,
-        mappings: ws.mappings,
+        projectName: fresh.projectName,
+        clientName: fresh.clientName,
+        rfqWorkbook: fresh.rfqWorkbook,
+        quoteFiles: fresh.quoteFiles,
+        mappings: fresh.mappings,
       });
       const response = await generateQcr(projectId, payload);
       saveWorkspaceToSession(projectId, response);
-      if (ws.rfqWorkbook) {
+      if (fresh.rfqWorkbook) {
         saveQcrGenerationContext(projectId, {
-          rfqUploadedAt: ws.rfqWorkbook.uploadedAt,
-          rfqFileName: ws.rfqWorkbook.fileName,
+          rfqUploadedAt: fresh.rfqWorkbook.uploadedAt,
+          rfqFileName: fresh.rfqWorkbook.fileName,
           mappingFingerprint: mappingFingerprint(ws.mappings),
           workspaceId: response.workspace_id,
           generatedAt: response.generated_at,

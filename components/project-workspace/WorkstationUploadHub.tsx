@@ -65,10 +65,12 @@ function UploadedFileRow({
   label,
   fileName,
   onRemove,
+  removeLabel = "Remove",
 }: {
   label: string;
   fileName: string;
   onRemove: () => void;
+  removeLabel?: string;
 }) {
   return (
     <div className="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2">
@@ -85,7 +87,7 @@ function UploadedFileRow({
         onClick={onRemove}
         className="shrink-0 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-red-600 transition hover:border-red-200 hover:bg-red-50"
       >
-        Remove
+        {removeLabel}
       </button>
     </div>
   );
@@ -102,8 +104,8 @@ export function WorkstationUploadHub() {
   const proceedToPolicyMapping = useProjectWorkspaceStore(
     (s) => s.proceedToPolicyMapping
   );
-  const clearRfqWorkbook = useProjectWorkspaceStore((s) => s.clearRfqWorkbook);
-  const removeQuoteFile = useProjectWorkspaceStore((s) => s.removeQuoteFile);
+  const archiveRfqWorkbook = useProjectWorkspaceStore((s) => s.archiveRfqWorkbook);
+  const archiveQuoteFile = useProjectWorkspaceStore((s) => s.archiveQuoteFile);
 
   const {
     rfqInputRef,
@@ -123,18 +125,18 @@ export function WorkstationUploadHub() {
   const handleConfirmRemove = () => {
     if (!removeTarget) return;
     if (removeTarget.kind === "rfq") {
-      clearRfqWorkbook();
+      archiveRfqWorkbook();
     } else {
-      removeQuoteFile(removeTarget.id);
+      archiveQuoteFile(removeTarget.id);
     }
     setRemoveTarget(null);
   };
 
   const removeDialogMessage =
     removeTarget?.kind === "rfq"
-      ? "Remove this RFQ file? Any policy section mappings will also be cleared."
+      ? "Move this RFQ to Uploaded RFQ? Policy section mappings will be cleared and it will no longer be used for QCR generation."
       : removeTarget?.kind === "quote"
-        ? `Remove "${removeTarget.name}" from this project?`
+        ? `Move "${removeTarget.name}" to Uploaded Quotes? It will no longer be used for QCR generation.`
         : "";
 
   return (
@@ -214,6 +216,7 @@ export function WorkstationUploadHub() {
                     label="RFQ"
                     fileName={rfqWorkbook!.fileName}
                     onRemove={() => setRemoveTarget({ kind: "rfq" })}
+                    removeLabel="Move to archive"
                   />
                 </div>
               ) : (
@@ -239,6 +242,7 @@ export function WorkstationUploadHub() {
                           name: q.name,
                         })
                       }
+                      removeLabel="Move to archive"
                     />
                   ))}
                 </div>
@@ -280,9 +284,17 @@ export function WorkstationUploadHub() {
 
       <ConfirmDialog
         open={removeTarget !== null}
-        title="Remove file?"
+        title={
+          removeTarget?.kind === "quote" || removeTarget?.kind === "rfq"
+            ? "Move to archive?"
+            : "Remove file?"
+        }
         message={removeDialogMessage}
-        confirmLabel="Yes, remove"
+        confirmLabel={
+          removeTarget?.kind === "quote" || removeTarget?.kind === "rfq"
+            ? "Yes, move"
+            : "Yes, remove"
+        }
         cancelLabel="No"
         variant="danger"
         onConfirm={handleConfirmRemove}

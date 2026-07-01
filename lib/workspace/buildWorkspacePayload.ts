@@ -56,6 +56,7 @@ function buildDocuments(
       uploaded_at: rfqWorkbook.uploadedAt,
       mime_type:
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      server_document_id: rfqWorkbook.serverDocumentId ?? null,
     });
   }
   for (const q of quoteFiles) {
@@ -64,6 +65,7 @@ function buildDocuments(
       file_name: q.name,
       document_type: "quote",
       uploaded_at: q.uploadedAt,
+      server_document_id: q.serverDocumentId ?? null,
     });
   }
   return docs;

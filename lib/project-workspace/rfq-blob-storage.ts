@@ -15,8 +15,9 @@
  */
 
 const DB_NAME = "claurix-workspace";
-const DB_VERSION = 1;
+const DB_VERSION = 3;
 const STORE_NAME = "rfq-files";
+const ARCHIVED_STORE_NAME = "archived-rfq-files";
 
 export type StoredRfqFile = {
   projectId: string;
@@ -25,6 +26,20 @@ export type StoredRfqFile = {
   blob: Blob;
   savedAt: string;
 };
+
+export type StoredArchivedRfqFile = {
+  key: string;
+  projectId: string;
+  rfqFileId: string;
+  fileName: string;
+  mimeType: string;
+  blob: Blob;
+  savedAt: string;
+};
+
+function archivedStorageKey(projectId: string, rfqFileId: string): string {
+  return `${projectId}:${rfqFileId}`;
+}
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -39,6 +54,12 @@ function openDb(): Promise<IDBDatabase> {
       const db = request.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: "projectId" });
+      }
+      if (!db.objectStoreNames.contains("quote-files")) {
+        db.createObjectStore("quote-files", { keyPath: "key" });
+      }
+      if (!db.objectStoreNames.contains(ARCHIVED_STORE_NAME)) {
+        db.createObjectStore(ARCHIVED_STORE_NAME, { keyPath: "key" });
       }
     };
   });
@@ -101,6 +122,80 @@ export async function deleteRfqBlob(projectId: string): Promise<void> {
       req.onerror = () => reject(req.error ?? new Error("Failed to delete RFQ blob"));
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error ?? new Error("RFQ delete transaction failed"));
+    });
+  } finally {
+    db.close();
+  }
+}
+
+export async function saveArchivedRfqBlob(
+  projectId: string,
+  rfqFileId: string,
+  file: Blob,
+  fileName: string
+): Promise<void> {
+  const db = await openDb();
+  try {
+    const record: StoredArchivedRfqFile = {
+      key: archivedStorageKey(projectId, rfqFileId),
+      projectId,
+      rfqFileId,
+      fileName,
+      mimeType: file.type || "application/octet-stream",
+      blob: file,
+      savedAt: new Date().toISOString(),
+    };
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(ARCHIVED_STORE_NAME, "readwrite");
+      const store = tx.objectStore(ARCHIVED_STORE_NAME);
+      const req = store.put(record);
+      req.onerror = () =>
+        reject(req.error ?? new Error("Failed to save archived RFQ blob"));
+      tx.oncomplete = () => resolve();
+      tx.onerror = () =>
+        reject(tx.error ?? new Error("Archived RFQ blob transaction failed"));
+    });
+  } finally {
+    db.close();
+  }
+}
+
+export async function loadArchivedRfqBlobsForProject(
+  projectId: string
+): Promise<StoredArchivedRfqFile[]> {
+  const db = await openDb();
+  try {
+    return await new Promise<StoredArchivedRfqFile[]>((resolve, reject) => {
+      const tx = db.transaction(ARCHIVED_STORE_NAME, "readonly");
+      const store = tx.objectStore(ARCHIVED_STORE_NAME);
+      const req = store.getAll();
+      req.onerror = () =>
+        reject(req.error ?? new Error("Failed to load archived RFQ blobs"));
+      req.onsuccess = () => {
+        const all = (req.result as StoredArchivedRfqFile[] | undefined) ?? [];
+        resolve(all.filter((row) => row.projectId === projectId));
+      };
+    });
+  } finally {
+    db.close();
+  }
+}
+
+export async function deleteArchivedRfqBlob(
+  projectId: string,
+  rfqFileId: string
+): Promise<void> {
+  const db = await openDb();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(ARCHIVED_STORE_NAME, "readwrite");
+      const store = tx.objectStore(ARCHIVED_STORE_NAME);
+      const req = store.delete(archivedStorageKey(projectId, rfqFileId));
+      req.onerror = () =>
+        reject(req.error ?? new Error("Failed to delete archived RFQ blob"));
+      tx.oncomplete = () => resolve();
+      tx.onerror = () =>
+        reject(tx.error ?? new Error("Archived RFQ delete transaction failed"));
     });
   } finally {
     db.close();

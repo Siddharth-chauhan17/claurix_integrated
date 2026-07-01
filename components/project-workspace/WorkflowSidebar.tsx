@@ -20,6 +20,8 @@ const NAV_ITEMS: {
   count?: (state: {
     rfqWorkbook: { fileName: string } | null;
     quoteCount: number;
+    archivedQuoteCount: number;
+    archivedRfqCount: number;
     qcrExport: { fileName: string } | null;
   }) => number;
 }[] = [
@@ -37,13 +39,13 @@ const NAV_ITEMS: {
     stage: "rfq-upload",
     label: "Uploaded RFQ",
     icon: DocumentsIcon,
-    count: ({ rfqWorkbook }) => (rfqWorkbook ? 1 : 0),
+    count: ({ archivedRfqCount }) => archivedRfqCount,
   },
   {
     stage: "quote-uploads",
     label: "Uploaded Quotes",
     icon: DocumentsIcon,
-    count: ({ quoteCount }) => quoteCount,
+    count: ({ archivedQuoteCount }) => archivedQuoteCount,
   },
   {
     stage: "email",
@@ -125,6 +127,8 @@ export function WorkflowSidebar() {
   const currentStage = useProjectWorkspaceStore((s) => s.currentStage);
   const rfqWorkbook = useProjectWorkspaceStore((s) => s.rfqWorkbook);
   const quoteFiles = useProjectWorkspaceStore((s) => s.quoteFiles);
+  const archivedQuoteFiles = useProjectWorkspaceStore((s) => s.archivedQuoteFiles);
+  const archivedRfqFiles = useProjectWorkspaceStore((s) => s.archivedRfqFiles);
   const qcrExport = useProjectWorkspaceStore((s) => s.qcrExport);
   const toggleSidebar = useProjectWorkspaceStore((s) => s.toggleSidebar);
   const setStage = useProjectWorkspaceStore((s) => s.setStage);
@@ -196,6 +200,8 @@ export function WorkflowSidebar() {
                     ? count({
                         rfqWorkbook,
                         quoteCount: quoteFiles.length,
+                        archivedQuoteCount: archivedQuoteFiles.length,
+                        archivedRfqCount: archivedRfqFiles.length,
                         qcrExport,
                       })
                     : 0

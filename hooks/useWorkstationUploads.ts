@@ -2,32 +2,14 @@
 
 import { useRef, useCallback } from "react";
 import { toast } from "react-toastify";
-import { uploadProjectQuotes, uploadProjectRfq } from "@/lib/api";
+import { uploadProjectRfq } from "@/lib/api";
 import { parseExcelFile, isRfqExcel, isQuoteFile } from "@/lib/project-workspace/parseExcel";
+import { syncQuotesToServer } from "@/lib/project-workspace/sync-quotes-to-server";
 import { useProjectWorkspaceStore } from "@/stores/projectWorkspaceStore";
 
 async function syncRfqToServer(projectId: string, file: File) {
   const { document } = await uploadProjectRfq(projectId, file);
   useProjectWorkspaceStore.getState().setRfqServerDocumentId(document.id);
-}
-
-async function syncQuotesToServer(
-  projectId: string,
-  files: File[],
-  quoteCountBefore: number
-): Promise<number> {
-  const { items } = await uploadProjectQuotes(projectId, files);
-  const quoteFiles = useProjectWorkspaceStore.getState().quoteFiles;
-  const newRefs = quoteFiles.slice(quoteCountBefore);
-  let linked = 0;
-  items.forEach((doc, index) => {
-    const ref = newRefs[index];
-    if (ref) {
-      useProjectWorkspaceStore.getState().setQuoteServerDocumentId(ref.id, doc.id);
-      linked += 1;
-    }
-  });
-  return linked;
 }
 
 export function useWorkstationUploads() {
@@ -57,6 +39,7 @@ export function useWorkstationUploads() {
       if (projectId) {
         try {
           await syncRfqToServer(projectId, file);
+          toast.success("RFQ uploaded to server.");
         } catch (err) {
           toast.warn(
             err instanceof Error
@@ -78,26 +61,53 @@ export function useWorkstationUploads() {
         alert("Upload Excel (.xlsx, .xls) or PDF files.");
         return;
       }
+
       const quoteCountBefore = useProjectWorkspaceStore.getState().quoteFiles.length;
       addQuoteFiles(valid);
-      if (projectId) {
-        try {
-          const linked = await syncQuotesToServer(projectId, valid, quoteCountBefore);
-          if (linked > 0) {
-            toast.success(
-              linked === 1
-                ? "Quote uploaded to server."
-                : `${linked} quotes uploaded to server.`
-            );
-          }
-        } catch (err) {
-          toast.warn(
-            err instanceof Error
-              ? `Quotes saved locally only: ${err.message}`
-              : "Quotes saved locally only; server upload failed."
+
+      if (!projectId) {
+        if (quotesInputRef.current) quotesInputRef.current.value = "";
+        return;
+      }
+
+      const state = useProjectWorkspaceStore.getState();
+      const newRefs = state.quoteFiles.slice(quoteCountBefore);
+      const targets = newRefs
+        .map((ref, index) => ({
+          quoteFileId: ref.id,
+          fileName: ref.name,
+          file: valid[index],
+        }))
+        .filter((target) => target.file);
+
+      try {
+        const { linked, errors } = await syncQuotesToServer(
+          projectId,
+          targets,
+          state.setQuoteServerDocumentId
+        );
+        if (linked > 0) {
+          toast.success(
+            linked === 1
+              ? "Quote uploaded to server."
+              : `${linked} quotes uploaded to server.`
           );
         }
+        if (errors.length > 0) {
+          toast.warn(
+            errors.length === 1
+              ? `Quote saved locally only: ${errors[0]}`
+              : `Some quotes saved locally only: ${errors.join("; ")}`
+          );
+        }
+      } catch (err) {
+        toast.warn(
+          err instanceof Error
+            ? `Quotes saved locally only: ${err.message}`
+            : "Quotes saved locally only; server upload failed."
+        );
       }
+
       if (quotesInputRef.current) quotesInputRef.current.value = "";
     },
     [addQuoteFiles, projectId]

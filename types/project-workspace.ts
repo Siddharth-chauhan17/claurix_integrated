@@ -47,10 +47,20 @@ export type RfqWorkbook = {
   serverDocumentId?: string;
 };
 
+/** Archived RFQ entry (Uploaded RFQ sidebar). */
+export type RfqFileRef = {
+  id: string;
+  workbook: RfqWorkbook;
+  /** When the RFQ was moved to the archive (Uploaded RFQ). */
+  archivedAt?: string;
+};
+
 export type QuoteFileRef = {
   id: string;
   name: string;
   uploadedAt: string;
+  /** When the quote was moved to the archive (Uploaded Quotes). */
+  archivedAt?: string;
   /** Server-side document id after Phase 1 dual-write upload. */
   serverDocumentId?: string;
 };
@@ -80,6 +90,10 @@ export type PersistedWorkspaceState = {
   sidebarCollapsed: boolean;
   rfqWorkbook: RfqWorkbook | null;
   quoteFiles: QuoteFileRef[];
+  /** Quotes removed from the active upload step; not used for QCR generation. */
+  archivedQuoteFiles?: QuoteFileRef[];
+  /** RFQs removed from the active upload step; not used for policy mapping / QCR. */
+  archivedRfqFiles?: RfqFileRef[];
   activeSheetName: string | null;
   mappings: PolicyMapping[];
   qcrExport?: QcrExportRef | null;

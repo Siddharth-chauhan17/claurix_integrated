@@ -120,6 +120,21 @@ def _remove_documents(db: Session, docs: list[ProjectDocument]) -> None:
     db.commit()
 
 
+def delete_project_document(
+    db: Session,
+    project: Project,
+    document_id: str,
+) -> None:
+    """Remove one project document from disk and database."""
+    doc = get_document_for_project(db, project, document_id)
+    if doc is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found for this project",
+        )
+    _remove_documents(db, [doc])
+
+
 async def save_project_document(
     db: Session,
     project: Project,

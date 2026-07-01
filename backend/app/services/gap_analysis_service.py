@@ -84,7 +84,25 @@ def policy_config_from_payload(payload: WorkspacePayload) -> list[dict]:
     return configs
 
 
-def _excel_quote_documents(db: Session, project: Project):
+def _excel_quote_documents(
+    db: Session,
+    project: Project,
+    payload: WorkspacePayload,
+) -> list:
+    """Quote Excel files selected in the workstation payload (active quotes only)."""
+    active_server_ids: set[str] = set()
+    active_filenames: set[str] = set()
+    for descriptor in payload.documents:
+        if descriptor.document_type != document_service.DOCUMENT_TYPE_QUOTE:
+            continue
+        if descriptor.server_document_id:
+            active_server_ids.add(descriptor.server_document_id)
+        if descriptor.file_name:
+            active_filenames.add(descriptor.file_name.lower())
+
+    if not active_server_ids and not active_filenames:
+        return []
+
     docs = document_service.list_documents_for_project(
         db, project, document_service.DOCUMENT_TYPE_QUOTE
     )
@@ -93,8 +111,22 @@ def _excel_quote_documents(db: Session, project: Project):
         for d in docs
         if Path(d.original_filename).suffix.lower() in EXCEL_SUFFIXES
         and Path(d.storage_path).is_file()
+        and (
+            d.id in active_server_ids
+            or d.original_filename.lower() in active_filenames
+        )
     ]
-    return excel_docs
+
+    if active_server_ids:
+        by_id = {d.id: d for d in excel_docs if d.id in active_server_ids}
+        return list(by_id.values())
+
+    by_name: dict[str, object] = {}
+    for doc in sorted(excel_docs, key=lambda d: d.created_at, reverse=True):
+        key = doc.original_filename.lower()
+        if key in active_filenames and key not in by_name:
+            by_name[key] = doc
+    return list(by_name.values())
 
 
 def _company_name_from_document(doc) -> str:
@@ -218,13 +250,13 @@ def run_gap_analysis(
             detail="No valid policy mappings with sheet and row ranges",
         )
 
-    quote_docs = _excel_quote_documents(db, project)
+    quote_docs = _excel_quote_documents(db, project, payload)
     if not quote_docs:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
-                "No quote Excel files on server. Upload quotes in the workstation "
-                "before generating QCR with AI enabled."
+                "No active quote Excel files on server. Upload quotes in the "
+                "Upload documents step before generating QCR with AI enabled."
             ),
         )
 

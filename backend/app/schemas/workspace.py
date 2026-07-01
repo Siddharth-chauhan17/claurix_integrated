@@ -62,6 +62,7 @@ class DocumentDescriptor(BaseModel):
     document_type: DocumentType
     uploaded_at: Optional[datetime] = None
     mime_type: Optional[str] = None
+    server_document_id: Optional[str] = Field(default=None, max_length=64)
 
 
 class SelectedPolicySection(BaseModel):

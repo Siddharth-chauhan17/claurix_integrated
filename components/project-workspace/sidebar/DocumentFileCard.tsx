@@ -25,7 +25,10 @@ type DocumentFileCardProps = {
   uploadedAt: string;
   canDownload: boolean;
   onDownload: () => void;
+  onImport?: () => void;
+  importLabel?: string;
   onRemove?: () => void;
+  removeLabel?: string;
   compact?: boolean;
 };
 
@@ -34,7 +37,10 @@ export function DocumentFileCard({
   uploadedAt,
   canDownload,
   onDownload,
+  onImport,
+  importLabel = "Import",
   onRemove,
+  removeLabel = "Remove",
   compact = false,
 }: DocumentFileCardProps) {
   return (
@@ -71,8 +77,8 @@ export function DocumentFileCard({
           <button
             type="button"
             onClick={onRemove}
-            title={`Remove ${fileName}`}
-            aria-label={`Remove ${fileName}`}
+            title={`${removeLabel} ${fileName}`}
+            aria-label={`${removeLabel} ${fileName}`}
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-red-50 hover:text-red-600"
           >
             <svg
@@ -88,7 +94,7 @@ export function DocumentFileCard({
           </button>
         ) : null}
       </div>
-      <div className={cn("flex gap-2", compact ? "mt-2" : "mt-2.5")}>
+      <div className={cn("flex flex-wrap gap-2", compact ? "mt-2" : "mt-2.5")}>
         <button
           type="button"
           onClick={onDownload}
@@ -99,7 +105,7 @@ export function DocumentFileCard({
               : "Re-upload this file in this session to enable download"
           }
           className={cn(
-            "flex-1 rounded-md border text-center text-xs font-semibold transition",
+            "min-w-0 flex-1 rounded-md border text-center text-xs font-semibold transition",
             canDownload
               ? "border-slate-200 bg-white text-slate-700 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
               : "cursor-not-allowed border-slate-100 bg-slate-100 text-slate-400"
@@ -107,13 +113,22 @@ export function DocumentFileCard({
         >
           Download
         </button>
+        {onImport ? (
+          <button
+            type="button"
+            onClick={onImport}
+            className="rounded-md border border-primary-200 bg-primary-50 px-3 text-xs font-semibold text-primary-800 transition hover:border-primary-300 hover:bg-primary-100"
+          >
+            {importLabel}
+          </button>
+        ) : null}
         {onRemove ? (
           <button
             type="button"
             onClick={onRemove}
             className="rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-red-600 transition hover:border-red-200 hover:bg-red-50"
           >
-            Remove
+            {removeLabel}
           </button>
         ) : null}
       </div>

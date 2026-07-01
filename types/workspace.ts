@@ -71,6 +71,8 @@ export type DocumentDescriptor = {
   document_type: DocumentType;
   uploaded_at?: string | null;
   mime_type?: string | null;
+  /** Server-stored document id for quote/rfq files used by gap analysis. */
+  server_document_id?: string | null;
 };
 
 /** User-selected policy section sent to the AI orchestration layer. */

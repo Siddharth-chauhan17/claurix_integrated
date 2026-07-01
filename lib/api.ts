@@ -729,6 +729,19 @@ export async function exportQcrWorkbook(
   return res.blob();
 }
 
+export async function deleteProjectDocument(
+  projectId: string,
+  documentId: string
+): Promise<void> {
+  const res = await fetch(
+    `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/documents/${encodeURIComponent(documentId)}`,
+    { method: "DELETE", credentials: "include" }
+  );
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, "Failed to delete document"));
+  }
+}
+
 export async function uploadProjectQuotes(
   projectId: string,
   files: File[]

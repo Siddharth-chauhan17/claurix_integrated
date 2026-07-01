@@ -133,6 +133,21 @@ async def upload_project_quotes(
     return ProjectDocumentsUploadResponse(count=len(items), items=items)
 
 
+@router.delete(
+    "/{project_id}/documents/{document_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a project document (quote archive permanent remove)",
+)
+def delete_project_document(
+    project_id: str,
+    document_id: str,
+    user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+) -> None:
+    project, _ = project_service.get_project_for_user_or_raise(db, project_id, user)
+    document_service.delete_project_document(db, project, document_id)
+
+
 @router.post(
     "/{project_id}/mail/import-attachment",
     response_model=OutlookImportAttachmentResponse,

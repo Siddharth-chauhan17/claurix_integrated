@@ -6,7 +6,7 @@
  * - UI: selection, filters, loading
  * - draft: unsaved edits metadata (persistence hooks ready)
  *
- * NOT the renderer shell store (see stores/workspace-store.ts).
+ * Single source of truth for QCR workspace editing state.
  */
 
 import { create } from "zustand";

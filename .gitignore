@@ -30,6 +30,7 @@ __pycache__/
 # Runtime data
 backend/uploads/
 backend/data/
+backend/exports/
 *.db
 backend/test.db
 
